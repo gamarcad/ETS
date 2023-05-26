@@ -35,6 +35,7 @@ table ValidTickets(bitstring).
 table Places(bitstring, bitstring).
 table PlacesValidated(bitstring, bitstring).
 table InvalidTickets(bitstring).
+table RefundPaiement(bitstring).
 
 (* Events Declarations *)
 event User1SendPurchaseRequest(bitstring, bitstring, bitstring, rand, pkey).
@@ -66,6 +67,9 @@ event User2SendValidationRequest(bitstring, bitstring, rand, bitstring, pkey, pk
 event User2ReceivesValidationResponse(bitstring, bitstring, rand, bitstring, pkey, pkey, bitstring).
 event User2SendValidationResponseConfirmation(bitstring, bitstring, rand, bitstring, pkey, pkey, bitstring).
 
+event UserIsRefund(bitstring, bitstring, bitstring, pkey).
+event User1HasBeenRefund(bitstring, bitstring, bitstring, pkey).
+
 
 (** Events for tests and sessions ***)
 event SessionD(stamp, bitstring,bitstring, bitstring).
@@ -94,6 +98,7 @@ let User1(skU1: skey, ide: bitstring, idp: bitstring, pkD: pkey, pkT: pkey, pkV:
   new r: rand;
   event User1SendPurchaseRequest(ide, idp, c, rc, pkD);
   out(ch, aenc((ide, idp,rc), r, pkD));
+  out(ch, c);
   in(ch, sigmac: bitstring);
   if (checksign(sigmac, c, pkD) = c) then
   (
@@ -129,10 +134,20 @@ let User1(skU1: skey, ide: bitstring, idp: bitstring, pkD: pkey, pkT: pkey, pkV:
   let pkU1_rt = pk(skU1_rt) in out(ch, pkU1_rt);
   out(chU1, (ide, idp, pkU1_rt));
   new r2: rand;
-  let sigma_T1 = sign((pkU2_rt, c), r2, skU1_rt) in
+  let sigma_T1 = sign((pkU2_rt, c, rc), r2, skU1_rt) in
   new r3: rand;
   event User1SendTransfertRequest(ide, idp, rc, c, pkU1_rt, pkU2_rt, pkT);
   out(ch, (pk(skU1_rt), sigma_T1, aenc(ticket, r3, pkT)))
+  )
+
+  |
+
+  (*********** Refund Phase **********)
+  (
+  new r4: rand;
+  out(ch, aenc(ticket, r4, pkD));
+  get RefundPaiement(=c) in
+  event User1HasBeenRefund(ide, idp, c, pkD)
   )
 
   ).
@@ -158,6 +173,7 @@ let User2(skU2: skey, pkT: pkey, pkV: pkey, chU1: channel, chU2: channel) =
       new r2: rand;
       event User2SendPurchaseRequest(idex, idpx, cx, pkU1_rt, pk(skU2_rt), pkT);
       out(ch, aenc((idex, idpx, rcx), r2, pkT));
+      out(ch, cx);
       in(ch, sigmacx: bitstring);
       if (checksign(sigmacx, cx, pkT) = cx) then
       (
@@ -193,7 +209,7 @@ let Transferor(skT: skey, pkD: pkey) =
       let cx = hash((idex, idpx, rcx)) in
       if ((checksign(sigmacx, cx, pkD) = cx) &&
         (checksign(sigma_T2, (pkU1_rt, idex, idpx), pkU2_rt) = (pkU1_rt, idex, idpx)) &&
-        (checksign(sigma_T1, (pkU2_rt, cx), pkU1_rt) = (pkU2_rt, cx))) then
+        (checksign(sigma_T1, (pkU2_rt, cx, rcx), pkU1_rt) = (pkU2_rt, cx, rcx))) then
       (
         get InvalidTickets(=cx) in
         (0)
@@ -292,6 +308,24 @@ let Distributor(skD: skey) =
        )
     ).
 
+let Refunder(skD: skey) =
+  in(ch, eticket: bitstring);
+  let ((idex: bitstring, idpx: bitstring, rcx: bitstring), sigmacx: bitstring) = adec(eticket, skD) in
+  let cx = hash((idex, idpx, rcx)) in
+  if (checksign(sigmacx, cx, pk(skD)) = cx) then
+  (
+    get InvalidTickets(=cx) in
+    (0)
+    else
+    (
+        get ValidTickets(=cx) in
+        (
+          insert InvalidTickets(cx);
+          event UserIsRefund(idex, idpx, cx, pk(skD));
+          insert RefundPaiement(cx)
+        ) else (0)
+    )
+  ).
 
 
 process
@@ -317,6 +351,6 @@ process
      new chU2: channel;
 
      User1(skU1, ide, idp, pkD, pkT, pkV, chU1, chU2) | !Distributor(skD) | !Validator(skV, pkD) | !Validator(skV, pkT)
-     | User2(skU2, pkT, pkV, chU1, chU2) | !Transferor(skT, pkD)
+     | User2(skU2, pkT, pkV, chU1, chU2) | !Transferor(skT, pkD) | !Refunder(skD)
 
    )

@@ -32,197 +32,218 @@ Process 0 (that is, the initial process):
     {30}new r: rand;
     {31}event User1SendPurchaseRequest(ide_1,idp_1,c,rc,pkD);
     {32}out(ch, aenc((ide_1,idp_1,rc),r,pkD));
-    {33}in(ch, sigmac: bitstring);
-    {34}if (checksign(sigmac,c,pkD) = c) then
-    {35}event User1ReceivesPurchaseResponse(ide_1,idp_1,c,sigmac,pkD);
-    {36}let ticket: bitstring = ((ide_1,idp_1,rc),sigmac) in
-    {37}insert Paiement(c);
+    {33}out(ch, c);
+    {34}in(ch, sigmac: bitstring);
+    {35}if (checksign(sigmac,c,pkD) = c) then
+    {36}event User1ReceivesPurchaseResponse(ide_1,idp_1,c,sigmac,pkD);
+    {37}let ticket: bitstring = ((ide_1,idp_1,rc),sigmac) in
+    {38}insert Paiement(c);
     (
-        {38}new r2: rand;
-        {39}let skU1_r2: skey = randsk(skU1_1,r2) in
-        {40}let pkU1_r2: pkey = pk(skU1_r2) in
-        {41}out(ch, pkU1_r2);
-        {42}new r3: rand;
-        {43}event User1SendValidationRequest(ide_1,idp_1,rc,c,pkU1_r2,pkV);
-        {44}out(ch, aenc((pkU1_r2,ticket),r3,pkV));
-        {45}in(ch, (Vresponse: bitstring,Vsresponse: bitstring));
-        {46}if (checksign(Vsresponse,Vresponse,pkV) = Vresponse) then
-        {47}let s: bitstring = adec(Vresponse,skU1_r2) in
-        {48}event User1ReceivesValidationResponse(ide_1,idp_1,rc,c,pkU1_r2,pkV,s);
-        {49}event User1SendValidationResponseConfirmation(ide_1,idp_1,rc,c,pkU1_r2,pkV,s);
-        {50}out(chp, s)
+        {39}new r2: rand;
+        {40}let skU1_r2: skey = randsk(skU1_1,r2) in
+        {41}let pkU1_r2: pkey = pk(skU1_r2) in
+        {42}out(ch, pkU1_r2);
+        {43}new r3: rand;
+        {44}event User1SendValidationRequest(ide_1,idp_1,rc,c,pkU1_r2,pkV);
+        {45}out(ch, aenc((pkU1_r2,ticket),r3,pkV));
+        {46}in(ch, (Vresponse: bitstring,Vsresponse: bitstring));
+        {47}if (checksign(Vsresponse,Vresponse,pkV) = Vresponse) then
+        {48}let s: bitstring = adec(Vresponse,skU1_r2) in
+        {49}event User1ReceivesValidationResponse(ide_1,idp_1,rc,c,pkU1_r2,pkV,s);
+        {50}event User1SendValidationResponseConfirmation(ide_1,idp_1,rc,c,pkU1_r2,pkV,s);
+        {51}out(chp, s)
     ) | (
-        {51}in(chU2_1, pkU2_rt: pkey);
-        {52}new rt: rand;
-        {53}let skU1_rt: skey = randsk(skU1_1,rt) in
-        {54}let pkU1_rt: pkey = pk(skU1_rt) in
-        {55}out(ch, pkU1_rt);
-        {56}out(chU1_1, (ide_1,idp_1,pkU1_rt));
-        {57}new r2_1: rand;
-        {58}let sigma_T1: bitstring = sign((pkU2_rt,c),r2_1,skU1_rt) in
-        {59}new r3_1: rand;
-        {60}event User1SendTransfertRequest(ide_1,idp_1,rc,c,pkU1_rt,pkU2_rt,pkT);
-        {61}out(ch, (pk(skU1_rt),sigma_T1,aenc(ticket,r3_1,pkT)))
+        {52}in(chU2_1, pkU2_rt: pkey);
+        {53}new rt: rand;
+        {54}let skU1_rt: skey = randsk(skU1_1,rt) in
+        {55}let pkU1_rt: pkey = pk(skU1_rt) in
+        {56}out(ch, pkU1_rt);
+        {57}out(chU1_1, (ide_1,idp_1,pkU1_rt));
+        {58}new r2_1: rand;
+        {59}let sigma_T1: bitstring = sign((pkU2_rt,c,rc),r2_1,skU1_rt) in
+        {60}new r3_1: rand;
+        {61}event User1SendTransfertRequest(ide_1,idp_1,rc,c,pkU1_rt,pkU2_rt,pkT);
+        {62}out(ch, (pk(skU1_rt),sigma_T1,aenc(ticket,r3_1,pkT)))
+    ) | (
+        {63}new r4: rand;
+        {64}out(ch, aenc(ticket,r4,pkD));
+        {66}get RefundPaiement(=c) in
+        {65}event User1HasBeenRefund(ide_1,idp_1,c,pkD)
     )
 ) | (
-    {62}!
-    {63}let skD_1: skey = skD in
-    {64}new st: stamp;
-    {65}in(ch, request: bitstring);
-    {66}let (idex: bitstring,idpx: bitstring,rc_1: rand) = adec(request,skD_1) in
-    {80}get Places(=idex,=idpx) in
+    {67}!
+    {68}let skD_1: skey = skD in
+    {69}new st: stamp;
+    {70}in(ch, request: bitstring);
+    {71}let (idex: bitstring,idpx: bitstring,rc_1: rand) = adec(request,skD_1) in
+    {85}get Places(=idex,=idpx) in
         0
     else
-        {67}let c_1: bitstring = hash((idex,idpx,rc_1)) in
-        {68}event SessionD(st,lock,idex,idpx);
-        {69}event DistributorReceivesPurchaseRequest(idex,idpx,c_1,rc_1,pk(skD_1));
-        {70}new r_1: rand;
-        {71}event DistributorSendsPurchaseResponse(idex,idpx,c_1,sign(c_1,r_1,skD_1),pk(skD_1));
-        {72}out(ch, sign(c_1,r_1,skD_1));
-        {79}get Paiement(=c_1) in
-            {73}insert Places(idex,idpx);
-            {74}insert ValidTickets(c_1);
-            {75}event SessionD(st,unlock,idex,idpx);
-            {76}event User1HasValidTicket(idex,idpx,c_1,sign(c_1,r_1,skD_1),pk(skD_1))
+        {72}let c_1: bitstring = hash((idex,idpx,rc_1)) in
+        {73}event SessionD(st,lock,idex,idpx);
+        {74}event DistributorReceivesPurchaseRequest(idex,idpx,c_1,rc_1,pk(skD_1));
+        {75}new r_1: rand;
+        {76}event DistributorSendsPurchaseResponse(idex,idpx,c_1,sign(c_1,r_1,skD_1),pk(skD_1));
+        {77}out(ch, sign(c_1,r_1,skD_1));
+        {84}get Paiement(=c_1) in
+            {78}insert Places(idex,idpx);
+            {79}insert ValidTickets(c_1);
+            {80}event SessionD(st,unlock,idex,idpx);
+            {81}event User1HasValidTicket(idex,idpx,c_1,sign(c_1,r_1,skD_1),pk(skD_1))
         else
-            {77}event SessionD(st,unlock,idex,idpx);
-            {78}insert InvalidTickets(c_1)
+            {82}event SessionD(st,unlock,idex,idpx);
+            {83}insert InvalidTickets(c_1)
 ) | (
-    {81}!
-    {82}let skV_1: skey = skV in
-    {83}new st_1: stamp;
-    {84}in(ch, requestVal: bitstring);
-    {85}let (pkU: pkey,ticket_1: bitstring) = adec(requestVal,skV_1) in
-    {86}let ((idex_1: bitstring,idpx_1: bitstring,rc_2: rand),sigmac_1: bitstring) = ticket_1 in
-    {87}let c_2: bitstring = hash((idex_1,idpx_1,rc_2)) in
-    {88}if (checksign(sigmac_1,c_2,pkD) = c_2) then
-    {105}get InvalidTickets(=c_2) in
+    {86}!
+    {87}let skV_1: skey = skV in
+    {88}new st_1: stamp;
+    {89}in(ch, requestVal: bitstring);
+    {90}let (pkU: pkey,ticket_1: bitstring) = adec(requestVal,skV_1) in
+    {91}let ((idex_1: bitstring,idpx_1: bitstring,rc_2: rand),sigmac_1: bitstring) = ticket_1 in
+    {92}let c_2: bitstring = hash((idex_1,idpx_1,rc_2)) in
+    {93}if (checksign(sigmac_1,c_2,pkD) = c_2) then
+    {110}get InvalidTickets(=c_2) in
         0
     else
-        {104}get ValidTickets(=c_2) in
-        {103}get PlacesValidated(=idex_1,=idpx_1) in
+        {109}get ValidTickets(=c_2) in
+        {108}get PlacesValidated(=idex_1,=idpx_1) in
             0
         else
-            {89}event SessionV(st_1,lock,idex_1,idpx_1);
-            {90}event ValidatorReceivesValidTicket(idex_1,idpx_1,rc_2,c_2,pkU,pk(skV_1));
-            {91}new s_1: bitstring;
-            {92}new r_2: rand;
-            {93}new r': rand;
-            {94}event ValidatorSendsEncryptedRes(idex_1,idpx_1,rc_2,c_2,pkU,pk(skV_1),s_1);
-            {95}out(ch, (aenc(s_1,r_2,pkU),sign(aenc(s_1,r_2,pkU),r',skV_1)));
-            {96}in(chp, s': bitstring);
-            {97}if (s_1 = s') then
-                {98}event SessionV(st_1,unlock,idex_1,idpx_1);
-                {99}event TicketIsValidated(idex_1,idpx_1,rc_2,c_2,pkU,pk(skV_1),s_1);
-                {100}insert PlacesValidated(idex_1,idpx_1);
-                {101}insert InvalidTickets(c_2)
+            {94}event SessionV(st_1,lock,idex_1,idpx_1);
+            {95}event ValidatorReceivesValidTicket(idex_1,idpx_1,rc_2,c_2,pkU,pk(skV_1));
+            {96}new s_1: bitstring;
+            {97}new r_2: rand;
+            {98}new r': rand;
+            {99}event ValidatorSendsEncryptedRes(idex_1,idpx_1,rc_2,c_2,pkU,pk(skV_1),s_1);
+            {100}out(ch, (aenc(s_1,r_2,pkU),sign(aenc(s_1,r_2,pkU),r',skV_1)));
+            {101}in(chp, s': bitstring);
+            {102}if (s_1 = s') then
+                {103}event SessionV(st_1,unlock,idex_1,idpx_1);
+                {104}event TicketIsValidated(idex_1,idpx_1,rc_2,c_2,pkU,pk(skV_1),s_1);
+                {105}insert PlacesValidated(idex_1,idpx_1);
+                {106}insert InvalidTickets(c_2)
             else
-                {102}event SessionV(st_1,unlock,idex_1,idpx_1)
+                {107}event SessionV(st_1,unlock,idex_1,idpx_1)
 ) | (
-    {106}!
-    {107}let skV_2: skey = skV in
-    {108}new st_2: stamp;
-    {109}in(ch, requestVal_1: bitstring);
-    {110}let (pkU_1: pkey,ticket_2: bitstring) = adec(requestVal_1,skV_2) in
-    {111}let ((idex_2: bitstring,idpx_2: bitstring,rc_3: rand),sigmac_2: bitstring) = ticket_2 in
-    {112}let c_3: bitstring = hash((idex_2,idpx_2,rc_3)) in
-    {113}if (checksign(sigmac_2,c_3,pkT) = c_3) then
-    {130}get InvalidTickets(=c_3) in
+    {111}!
+    {112}let skV_2: skey = skV in
+    {113}new st_2: stamp;
+    {114}in(ch, requestVal_1: bitstring);
+    {115}let (pkU_1: pkey,ticket_2: bitstring) = adec(requestVal_1,skV_2) in
+    {116}let ((idex_2: bitstring,idpx_2: bitstring,rc_3: rand),sigmac_2: bitstring) = ticket_2 in
+    {117}let c_3: bitstring = hash((idex_2,idpx_2,rc_3)) in
+    {118}if (checksign(sigmac_2,c_3,pkT) = c_3) then
+    {135}get InvalidTickets(=c_3) in
         0
     else
-        {129}get ValidTickets(=c_3) in
-        {128}get PlacesValidated(=idex_2,=idpx_2) in
+        {134}get ValidTickets(=c_3) in
+        {133}get PlacesValidated(=idex_2,=idpx_2) in
             0
         else
-            {114}event SessionV(st_2,lock,idex_2,idpx_2);
-            {115}event ValidatorReceivesValidTicket(idex_2,idpx_2,rc_3,c_3,pkU_1,pk(skV_2));
-            {116}new s_2: bitstring;
-            {117}new r_3: rand;
-            {118}new r'_1: rand;
-            {119}event ValidatorSendsEncryptedRes(idex_2,idpx_2,rc_3,c_3,pkU_1,pk(skV_2),s_2);
-            {120}out(ch, (aenc(s_2,r_3,pkU_1),sign(aenc(s_2,r_3,pkU_1),r'_1,skV_2)));
-            {121}in(chp, s'_1: bitstring);
-            {122}if (s_2 = s'_1) then
-                {123}event SessionV(st_2,unlock,idex_2,idpx_2);
-                {124}event TicketIsValidated(idex_2,idpx_2,rc_3,c_3,pkU_1,pk(skV_2),s_2);
-                {125}insert PlacesValidated(idex_2,idpx_2);
-                {126}insert InvalidTickets(c_3)
+            {119}event SessionV(st_2,lock,idex_2,idpx_2);
+            {120}event ValidatorReceivesValidTicket(idex_2,idpx_2,rc_3,c_3,pkU_1,pk(skV_2));
+            {121}new s_2: bitstring;
+            {122}new r_3: rand;
+            {123}new r'_1: rand;
+            {124}event ValidatorSendsEncryptedRes(idex_2,idpx_2,rc_3,c_3,pkU_1,pk(skV_2),s_2);
+            {125}out(ch, (aenc(s_2,r_3,pkU_1),sign(aenc(s_2,r_3,pkU_1),r'_1,skV_2)));
+            {126}in(chp, s'_1: bitstring);
+            {127}if (s_2 = s'_1) then
+                {128}event SessionV(st_2,unlock,idex_2,idpx_2);
+                {129}event TicketIsValidated(idex_2,idpx_2,rc_3,c_3,pkU_1,pk(skV_2),s_2);
+                {130}insert PlacesValidated(idex_2,idpx_2);
+                {131}insert InvalidTickets(c_3)
             else
-                {127}event SessionV(st_2,unlock,idex_2,idpx_2)
+                {132}event SessionV(st_2,unlock,idex_2,idpx_2)
 ) | (
-    {131}let skU2_1: skey = skU2 in
-    {132}let chU1_2: channel = chU1 in
-    {133}let chU2_2: channel = chU2 in
-    {134}new rt_1: rand;
-    {135}let skU2_rt: skey = randsk(skU2_1,rt_1) in
-    {136}let pkU2_rt_1: pkey = pk(skU2_rt) in
-    {137}out(ch, pkU2_rt_1);
-    {138}out(chU2_2, pkU2_rt_1);
-    {139}in(chU1_2, (idex_3: bitstring,idpx_3: bitstring,pkU1_rt_1: pkey));
-    {140}new r1: rand;
-    {141}let sigma_T2: bitstring = sign((pkU1_rt_1,idex_3,idpx_3),r1,skU2_rt) in
-    {142}event User2SendTransfertRequest(idex_3,idpx_3,pkU1_rt_1,pkU2_rt_1,pkT);
-    {143}out(ch, (pk(skU2_rt),sigma_T2));
-    {144}in(ch, responseT: bitstring);
-    {145}if (checksign(responseT,(idex_3,idpx_3,pk(skU2_rt),pkU1_rt_1),pkT) = (idex_3,idpx_3,pk(skU2_rt),pkU1_rt_1)) then
-    {146}event User2GetTApprobation(idex_3,idpx_3,pkU1_rt_1,pkU2_rt_1,pkT);
-    {147}new rcx: rand;
-    {148}let cx: bitstring = hash((idex_3,idpx_3,rcx)) in
-    {149}new r2_2: rand;
-    {150}event User2SendPurchaseRequest(idex_3,idpx_3,cx,pkU1_rt_1,pk(skU2_rt),pkT);
-    {151}out(ch, aenc((idex_3,idpx_3,rcx),r2_2,pkT));
-    {152}in(ch, sigmacx: bitstring);
-    {153}if (checksign(sigmacx,cx,pkT) = cx) then
-    {154}event User2ReceivesPurchaseResponse(idex_3,idpx_3,cx,sigmacx,pkU1_rt_1,pk(skU2_rt),pkT);
-    {155}let ticketx: bitstring = ((idex_3,idpx_3,rcx),sigmacx) in
-    {156}insert Paiement(cx);
-    {157}new r3_2: rand;
-    {158}let skU2_r3: skey = randsk(skU2_1,r3_2) in
-    {159}let pkU2_r3: pkey = pk(skU2_r3) in
-    {160}out(ch, pkU2_r3);
-    {161}new r4: rand;
-    {162}event User2SendValidationRequest(idex_3,idpx_3,rcx,cx,pkU2_r3,pkV);
-    {163}out(ch, aenc((pkU2_r3,ticketx),r4,pkV));
-    {164}in(ch, (Vresponse_1: bitstring,Vsresponse_1: bitstring));
-    {165}if (checksign(Vsresponse_1,Vresponse_1,pkV) = Vresponse_1) then
-    {166}let s_3: bitstring = adec(Vresponse_1,skU2_r3) in
-    {167}event User2ReceivesValidationResponse(idex_3,idpx_3,rcx,cx,pkU2_r3,pkV,s_3);
-    {168}event User2SendValidationResponseConfirmation(idex_3,idpx_3,rcx,cx,pkU2_r3,pkV,s_3);
-    {169}out(chp, s_3)
+    {136}let skU2_1: skey = skU2 in
+    {137}let chU1_2: channel = chU1 in
+    {138}let chU2_2: channel = chU2 in
+    {139}new rt_1: rand;
+    {140}let skU2_rt: skey = randsk(skU2_1,rt_1) in
+    {141}let pkU2_rt_1: pkey = pk(skU2_rt) in
+    {142}out(ch, pkU2_rt_1);
+    {143}out(chU2_2, pkU2_rt_1);
+    {144}in(chU1_2, (idex_3: bitstring,idpx_3: bitstring,pkU1_rt_1: pkey));
+    {145}new r1: rand;
+    {146}let sigma_T2: bitstring = sign((pkU1_rt_1,idex_3,idpx_3),r1,skU2_rt) in
+    {147}event User2SendTransfertRequest(idex_3,idpx_3,pkU1_rt_1,pkU2_rt_1,pkT);
+    {148}out(ch, (pk(skU2_rt),sigma_T2));
+    {149}in(ch, responseT: bitstring);
+    {150}if (checksign(responseT,(idex_3,idpx_3,pk(skU2_rt),pkU1_rt_1),pkT) = (idex_3,idpx_3,pk(skU2_rt),pkU1_rt_1)) then
+    {151}event User2GetTApprobation(idex_3,idpx_3,pkU1_rt_1,pkU2_rt_1,pkT);
+    {152}new rcx: rand;
+    {153}let cx: bitstring = hash((idex_3,idpx_3,rcx)) in
+    {154}new r2_2: rand;
+    {155}event User2SendPurchaseRequest(idex_3,idpx_3,cx,pkU1_rt_1,pk(skU2_rt),pkT);
+    {156}out(ch, aenc((idex_3,idpx_3,rcx),r2_2,pkT));
+    {157}out(ch, cx);
+    {158}in(ch, sigmacx: bitstring);
+    {159}if (checksign(sigmacx,cx,pkT) = cx) then
+    {160}event User2ReceivesPurchaseResponse(idex_3,idpx_3,cx,sigmacx,pkU1_rt_1,pk(skU2_rt),pkT);
+    {161}let ticketx: bitstring = ((idex_3,idpx_3,rcx),sigmacx) in
+    {162}insert Paiement(cx);
+    {163}new r3_2: rand;
+    {164}let skU2_r3: skey = randsk(skU2_1,r3_2) in
+    {165}let pkU2_r3: pkey = pk(skU2_r3) in
+    {166}out(ch, pkU2_r3);
+    {167}new r4_1: rand;
+    {168}event User2SendValidationRequest(idex_3,idpx_3,rcx,cx,pkU2_r3,pkV);
+    {169}out(ch, aenc((pkU2_r3,ticketx),r4_1,pkV));
+    {170}in(ch, (Vresponse_1: bitstring,Vsresponse_1: bitstring));
+    {171}if (checksign(Vsresponse_1,Vresponse_1,pkV) = Vresponse_1) then
+    {172}let s_3: bitstring = adec(Vresponse_1,skU2_r3) in
+    {173}event User2ReceivesValidationResponse(idex_3,idpx_3,rcx,cx,pkU2_r3,pkV,s_3);
+    {174}event User2SendValidationResponseConfirmation(idex_3,idpx_3,rcx,cx,pkU2_r3,pkV,s_3);
+    {175}out(chp, s_3)
 ) | (
-    {170}!
-    {171}let skT_1: skey = skT in
-    {172}new st_3: stamp;
-    {173}in(ch, requestUser2: bitstring);
-    {174}let (pkU2_rt_2: pkey,sigma_T2_1: bitstring) = requestUser2 in
-    {175}in(ch, requestUser1: bitstring);
-    {176}let (pkU1_rt_2: pkey,sigma_T1_1: bitstring,eticket: bitstring) = requestUser1 in
-    {177}let ((idex_4: bitstring,idpx_4: bitstring,rcx_1: rand),sigmacx_1: bitstring) = adec(eticket,skT_1) in
-    {178}let cx_1: bitstring = hash((idex_4,idpx_4,rcx_1)) in
-    {179}if ((checksign(sigmacx_1,cx_1,pkD) = cx_1) && ((checksign(sigma_T2_1,(pkU1_rt_2,idex_4,idpx_4),pkU2_rt_2) = (pkU1_rt_2,idex_4,idpx_4)) && (checksign(sigma_T1_1,(pkU2_rt_2,cx_1),pkU1_rt_2) = (pkU2_rt_2,cx_1)))) then
-    {199}get InvalidTickets(=cx_1) in
+    {176}!
+    {177}let skT_1: skey = skT in
+    {178}new st_3: stamp;
+    {179}in(ch, requestUser2: bitstring);
+    {180}let (pkU2_rt_2: pkey,sigma_T2_1: bitstring) = requestUser2 in
+    {181}in(ch, requestUser1: bitstring);
+    {182}let (pkU1_rt_2: pkey,sigma_T1_1: bitstring,eticket: bitstring) = requestUser1 in
+    {183}let ((idex_4: bitstring,idpx_4: bitstring,rcx_1: rand),sigmacx_1: bitstring) = adec(eticket,skT_1) in
+    {184}let cx_1: bitstring = hash((idex_4,idpx_4,rcx_1)) in
+    {185}if ((checksign(sigmacx_1,cx_1,pkD) = cx_1) && ((checksign(sigma_T2_1,(pkU1_rt_2,idex_4,idpx_4),pkU2_rt_2) = (pkU1_rt_2,idex_4,idpx_4)) && (checksign(sigma_T1_1,(pkU2_rt_2,cx_1,rcx_1),pkU1_rt_2) = (pkU2_rt_2,cx_1,rcx_1)))) then
+    {205}get InvalidTickets(=cx_1) in
         0
     else
-        {198}get ValidTickets(=cx_1) in
-        {180}event SessionT(st_3,lock,idex_4,idpx_4);
-        {181}event TReceiveTransfertRequest(idex_4,idpx_4,rcx_1,cx_1,pkU1_rt_2,pkU2_rt_2,pk(skT_1));
-        {182}event TSendApprobationU2(idex_4,idpx_4,rcx_1,cx_1,pkU1_rt_2,pkU2_rt_2,pk(skT_1));
-        {183}new r_4: rand;
-        {184}out(ch, sign((idex_4,idpx_4,pkU2_rt_2,pkU1_rt_2),r_4,skT_1));
-        {185}in(ch, request_1: bitstring);
-        {186}let (=idex_4,=idpx_4,rc_4: rand) = adec(request_1,skT_1) in
-        {187}let c_4: bitstring = hash((idex_4,idpx_4,rc_4)) in
-        {188}event TReceivesPurchaseRequest(idex_4,idpx_4,cx_1,c_4,pkU1_rt_2,pkU2_rt_2,pk(skT_1));
-        {189}new r1_1: rand;
-        {190}event TSendsPurchaseResponse(idex_4,idpx_4,cx_1,c_4,sign(c_4,r1_1,skT_1),pkU1_rt_2,pkU2_rt_2,pk(skT_1));
-        {191}out(ch, sign(c_4,r1_1,skT_1));
-        {197}get Paiement(=c_4) in
-            {192}insert ValidTickets(c_4);
-            {193}event SessionT(st_3,unlock,idex_4,idpx_4);
-            {194}event User2HasValidTicket(idex_4,idpx_4,c_4,sign(c_4,r1_1,skT_1),pkU1_rt_2,pk(skT_1))
+        {204}get ValidTickets(=cx_1) in
+        {186}event SessionT(st_3,lock,idex_4,idpx_4);
+        {187}event TReceiveTransfertRequest(idex_4,idpx_4,rcx_1,cx_1,pkU1_rt_2,pkU2_rt_2,pk(skT_1));
+        {188}event TSendApprobationU2(idex_4,idpx_4,rcx_1,cx_1,pkU1_rt_2,pkU2_rt_2,pk(skT_1));
+        {189}new r_4: rand;
+        {190}out(ch, sign((idex_4,idpx_4,pkU2_rt_2,pkU1_rt_2),r_4,skT_1));
+        {191}in(ch, request_1: bitstring);
+        {192}let (=idex_4,=idpx_4,rc_4: rand) = adec(request_1,skT_1) in
+        {193}let c_4: bitstring = hash((idex_4,idpx_4,rc_4)) in
+        {194}event TReceivesPurchaseRequest(idex_4,idpx_4,cx_1,c_4,pkU1_rt_2,pkU2_rt_2,pk(skT_1));
+        {195}new r1_1: rand;
+        {196}event TSendsPurchaseResponse(idex_4,idpx_4,cx_1,c_4,sign(c_4,r1_1,skT_1),pkU1_rt_2,pkU2_rt_2,pk(skT_1));
+        {197}out(ch, sign(c_4,r1_1,skT_1));
+        {203}get Paiement(=c_4) in
+            {198}insert ValidTickets(c_4);
+            {199}event SessionT(st_3,unlock,idex_4,idpx_4);
+            {200}event User2HasValidTicket(idex_4,idpx_4,c_4,sign(c_4,r1_1,skT_1),pkU1_rt_2,pk(skT_1))
         else
-            {195}event SessionT(st_3,unlock,idex_4,idpx_4);
-            {196}insert InvalidTickets(c_4)
+            {201}event SessionT(st_3,unlock,idex_4,idpx_4);
+            {202}insert InvalidTickets(c_4)
+) | (
+    {206}!
+    {207}let skD_2: skey = skD in
+    {208}in(ch, eticket_1: bitstring);
+    {209}let ((idex_5: bitstring,idpx_5: bitstring,rcx_2: bitstring),sigmacx_2: bitstring) = adec(eticket_1,skD_2) in
+    {210}let cx_2: bitstring = hash((idex_5,idpx_5,rcx_2)) in
+    {211}if (checksign(sigmacx_2,cx_2,pk(skD_2)) = cx_2) then
+    {216}get InvalidTickets(=cx_2) in
+        0
+    else
+        {215}get ValidTickets(=cx_2) in
+        {212}insert InvalidTickets(cx_2);
+        {213}event UserIsRefund(idex_5,idpx_5,cx_2,pk(skD_2));
+        {214}insert RefundPaiement(cx_2)
 )
 
 --  Process 1 (that is, process 0, with let moved downwards):
@@ -256,200 +277,221 @@ Process 0 (that is, the initial process):
     {29}let c: bitstring = hash((ide_1,idp_1,rc)) in
     {31}event User1SendPurchaseRequest(ide_1,idp_1,c,rc,pkD);
     {32}out(ch, aenc((ide_1,idp_1,rc),r,pkD));
-    {33}in(ch, sigmac: bitstring);
-    {34}if (checksign(sigmac,c,pkD) = c) then
-    {35}event User1ReceivesPurchaseResponse(ide_1,idp_1,c,sigmac,pkD);
-    {37}insert Paiement(c);
-    {36}let ticket: bitstring = ((ide_1,idp_1,rc),sigmac) in
+    {33}out(ch, c);
+    {34}in(ch, sigmac: bitstring);
+    {35}if (checksign(sigmac,c,pkD) = c) then
+    {36}event User1ReceivesPurchaseResponse(ide_1,idp_1,c,sigmac,pkD);
+    {38}insert Paiement(c);
+    {37}let ticket: bitstring = ((ide_1,idp_1,rc),sigmac) in
     {23}let skU1_1: skey = skU1 in
     (
-        {38}new r2: rand;
-        {39}let skU1_r2: skey = randsk(skU1_1,r2) in
-        {40}let pkU1_r2: pkey = pk(skU1_r2) in
-        {41}out(ch, pkU1_r2);
-        {42}new r3: rand;
-        {43}event User1SendValidationRequest(ide_1,idp_1,rc,c,pkU1_r2,pkV);
-        {44}out(ch, aenc((pkU1_r2,ticket),r3,pkV));
-        {45}in(ch, (Vresponse: bitstring,Vsresponse: bitstring));
-        {46}if (checksign(Vsresponse,Vresponse,pkV) = Vresponse) then
-        {47}let s: bitstring = adec(Vresponse,skU1_r2) in
-        {48}event User1ReceivesValidationResponse(ide_1,idp_1,rc,c,pkU1_r2,pkV,s);
-        {49}event User1SendValidationResponseConfirmation(ide_1,idp_1,rc,c,pkU1_r2,pkV,s);
-        {50}out(chp, s)
+        {39}new r2: rand;
+        {40}let skU1_r2: skey = randsk(skU1_1,r2) in
+        {41}let pkU1_r2: pkey = pk(skU1_r2) in
+        {42}out(ch, pkU1_r2);
+        {43}new r3: rand;
+        {44}event User1SendValidationRequest(ide_1,idp_1,rc,c,pkU1_r2,pkV);
+        {45}out(ch, aenc((pkU1_r2,ticket),r3,pkV));
+        {46}in(ch, (Vresponse: bitstring,Vsresponse: bitstring));
+        {47}if (checksign(Vsresponse,Vresponse,pkV) = Vresponse) then
+        {48}let s: bitstring = adec(Vresponse,skU1_r2) in
+        {49}event User1ReceivesValidationResponse(ide_1,idp_1,rc,c,pkU1_r2,pkV,s);
+        {50}event User1SendValidationResponseConfirmation(ide_1,idp_1,rc,c,pkU1_r2,pkV,s);
+        {51}out(chp, s)
     ) | (
         {27}let chU2_1: channel = chU2 in
-        {51}in(chU2_1, pkU2_rt: pkey);
-        {52}new rt: rand;
-        {53}let skU1_rt: skey = randsk(skU1_1,rt) in
-        {54}let pkU1_rt: pkey = pk(skU1_rt) in
-        {55}out(ch, pkU1_rt);
+        {52}in(chU2_1, pkU2_rt: pkey);
+        {53}new rt: rand;
+        {54}let skU1_rt: skey = randsk(skU1_1,rt) in
+        {55}let pkU1_rt: pkey = pk(skU1_rt) in
+        {56}out(ch, pkU1_rt);
         {26}let chU1_1: channel = chU1 in
-        {56}out(chU1_1, (ide_1,idp_1,pkU1_rt));
-        {57}new r2_1: rand;
-        {59}new r3_1: rand;
-        {60}event User1SendTransfertRequest(ide_1,idp_1,rc,c,pkU1_rt,pkU2_rt,pkT);
-        {58}let sigma_T1: bitstring = sign((pkU2_rt,c),r2_1,skU1_rt) in
-        {61}out(ch, (pk(skU1_rt),sigma_T1,aenc(ticket,r3_1,pkT)))
+        {57}out(chU1_1, (ide_1,idp_1,pkU1_rt));
+        {58}new r2_1: rand;
+        {60}new r3_1: rand;
+        {61}event User1SendTransfertRequest(ide_1,idp_1,rc,c,pkU1_rt,pkU2_rt,pkT);
+        {59}let sigma_T1: bitstring = sign((pkU2_rt,c,rc),r2_1,skU1_rt) in
+        {62}out(ch, (pk(skU1_rt),sigma_T1,aenc(ticket,r3_1,pkT)))
+    ) | (
+        {63}new r4: rand;
+        {64}out(ch, aenc(ticket,r4,pkD));
+        {66}get RefundPaiement(=c) in
+        {65}event User1HasBeenRefund(ide_1,idp_1,c,pkD)
     )
 ) | (
-    {62}!
-    {64}new st: stamp;
-    {65}in(ch, request: bitstring);
-    {63}let skD_1: skey = skD in
-    {66}let (idex: bitstring,idpx: bitstring,rc_1: rand) = adec(request,skD_1) in
-    {80}get Places(=idex,=idpx) in
+    {67}!
+    {69}new st: stamp;
+    {70}in(ch, request: bitstring);
+    {68}let skD_1: skey = skD in
+    {71}let (idex: bitstring,idpx: bitstring,rc_1: rand) = adec(request,skD_1) in
+    {85}get Places(=idex,=idpx) in
         0
     else
-        {68}event SessionD(st,lock,idex,idpx);
-        {67}let c_1: bitstring = hash((idex,idpx,rc_1)) in
-        {69}event DistributorReceivesPurchaseRequest(idex,idpx,c_1,rc_1,pk(skD_1));
-        {70}new r_1: rand;
-        {71}event DistributorSendsPurchaseResponse(idex,idpx,c_1,sign(c_1,r_1,skD_1),pk(skD_1));
-        {72}out(ch, sign(c_1,r_1,skD_1));
-        {79}get Paiement(=c_1) in
-            {73}insert Places(idex,idpx);
-            {74}insert ValidTickets(c_1);
-            {75}event SessionD(st,unlock,idex,idpx);
-            {76}event User1HasValidTicket(idex,idpx,c_1,sign(c_1,r_1,skD_1),pk(skD_1))
+        {73}event SessionD(st,lock,idex,idpx);
+        {72}let c_1: bitstring = hash((idex,idpx,rc_1)) in
+        {74}event DistributorReceivesPurchaseRequest(idex,idpx,c_1,rc_1,pk(skD_1));
+        {75}new r_1: rand;
+        {76}event DistributorSendsPurchaseResponse(idex,idpx,c_1,sign(c_1,r_1,skD_1),pk(skD_1));
+        {77}out(ch, sign(c_1,r_1,skD_1));
+        {84}get Paiement(=c_1) in
+            {78}insert Places(idex,idpx);
+            {79}insert ValidTickets(c_1);
+            {80}event SessionD(st,unlock,idex,idpx);
+            {81}event User1HasValidTicket(idex,idpx,c_1,sign(c_1,r_1,skD_1),pk(skD_1))
         else
-            {77}event SessionD(st,unlock,idex,idpx);
-            {78}insert InvalidTickets(c_1)
+            {82}event SessionD(st,unlock,idex,idpx);
+            {83}insert InvalidTickets(c_1)
 ) | (
-    {81}!
-    {83}new st_1: stamp;
-    {84}in(ch, requestVal: bitstring);
-    {82}let skV_1: skey = skV in
-    {85}let (pkU: pkey,ticket_1: bitstring) = adec(requestVal,skV_1) in
-    {86}let ((idex_1: bitstring,idpx_1: bitstring,rc_2: rand),sigmac_1: bitstring) = ticket_1 in
-    {87}let c_2: bitstring = hash((idex_1,idpx_1,rc_2)) in
-    {88}if (checksign(sigmac_1,c_2,pkD) = c_2) then
-    {105}get InvalidTickets(=c_2) in
+    {86}!
+    {88}new st_1: stamp;
+    {89}in(ch, requestVal: bitstring);
+    {87}let skV_1: skey = skV in
+    {90}let (pkU: pkey,ticket_1: bitstring) = adec(requestVal,skV_1) in
+    {91}let ((idex_1: bitstring,idpx_1: bitstring,rc_2: rand),sigmac_1: bitstring) = ticket_1 in
+    {92}let c_2: bitstring = hash((idex_1,idpx_1,rc_2)) in
+    {93}if (checksign(sigmac_1,c_2,pkD) = c_2) then
+    {110}get InvalidTickets(=c_2) in
         0
     else
-        {104}get ValidTickets(=c_2) in
-        {103}get PlacesValidated(=idex_1,=idpx_1) in
+        {109}get ValidTickets(=c_2) in
+        {108}get PlacesValidated(=idex_1,=idpx_1) in
             0
         else
-            {89}event SessionV(st_1,lock,idex_1,idpx_1);
-            {90}event ValidatorReceivesValidTicket(idex_1,idpx_1,rc_2,c_2,pkU,pk(skV_1));
-            {91}new s_1: bitstring;
-            {92}new r_2: rand;
-            {93}new r': rand;
-            {94}event ValidatorSendsEncryptedRes(idex_1,idpx_1,rc_2,c_2,pkU,pk(skV_1),s_1);
-            {95}out(ch, (aenc(s_1,r_2,pkU),sign(aenc(s_1,r_2,pkU),r',skV_1)));
-            {96}in(chp, s': bitstring);
-            {97}if (s_1 = s') then
-                {98}event SessionV(st_1,unlock,idex_1,idpx_1);
-                {99}event TicketIsValidated(idex_1,idpx_1,rc_2,c_2,pkU,pk(skV_1),s_1);
-                {100}insert PlacesValidated(idex_1,idpx_1);
-                {101}insert InvalidTickets(c_2)
+            {94}event SessionV(st_1,lock,idex_1,idpx_1);
+            {95}event ValidatorReceivesValidTicket(idex_1,idpx_1,rc_2,c_2,pkU,pk(skV_1));
+            {96}new s_1: bitstring;
+            {97}new r_2: rand;
+            {98}new r': rand;
+            {99}event ValidatorSendsEncryptedRes(idex_1,idpx_1,rc_2,c_2,pkU,pk(skV_1),s_1);
+            {100}out(ch, (aenc(s_1,r_2,pkU),sign(aenc(s_1,r_2,pkU),r',skV_1)));
+            {101}in(chp, s': bitstring);
+            {102}if (s_1 = s') then
+                {103}event SessionV(st_1,unlock,idex_1,idpx_1);
+                {104}event TicketIsValidated(idex_1,idpx_1,rc_2,c_2,pkU,pk(skV_1),s_1);
+                {105}insert PlacesValidated(idex_1,idpx_1);
+                {106}insert InvalidTickets(c_2)
             else
-                {102}event SessionV(st_1,unlock,idex_1,idpx_1)
+                {107}event SessionV(st_1,unlock,idex_1,idpx_1)
 ) | (
-    {106}!
-    {108}new st_2: stamp;
-    {109}in(ch, requestVal_1: bitstring);
-    {107}let skV_2: skey = skV in
-    {110}let (pkU_1: pkey,ticket_2: bitstring) = adec(requestVal_1,skV_2) in
-    {111}let ((idex_2: bitstring,idpx_2: bitstring,rc_3: rand),sigmac_2: bitstring) = ticket_2 in
-    {112}let c_3: bitstring = hash((idex_2,idpx_2,rc_3)) in
-    {113}if (checksign(sigmac_2,c_3,pkT) = c_3) then
-    {130}get InvalidTickets(=c_3) in
+    {111}!
+    {113}new st_2: stamp;
+    {114}in(ch, requestVal_1: bitstring);
+    {112}let skV_2: skey = skV in
+    {115}let (pkU_1: pkey,ticket_2: bitstring) = adec(requestVal_1,skV_2) in
+    {116}let ((idex_2: bitstring,idpx_2: bitstring,rc_3: rand),sigmac_2: bitstring) = ticket_2 in
+    {117}let c_3: bitstring = hash((idex_2,idpx_2,rc_3)) in
+    {118}if (checksign(sigmac_2,c_3,pkT) = c_3) then
+    {135}get InvalidTickets(=c_3) in
         0
     else
-        {129}get ValidTickets(=c_3) in
-        {128}get PlacesValidated(=idex_2,=idpx_2) in
+        {134}get ValidTickets(=c_3) in
+        {133}get PlacesValidated(=idex_2,=idpx_2) in
             0
         else
-            {114}event SessionV(st_2,lock,idex_2,idpx_2);
-            {115}event ValidatorReceivesValidTicket(idex_2,idpx_2,rc_3,c_3,pkU_1,pk(skV_2));
-            {116}new s_2: bitstring;
-            {117}new r_3: rand;
-            {118}new r'_1: rand;
-            {119}event ValidatorSendsEncryptedRes(idex_2,idpx_2,rc_3,c_3,pkU_1,pk(skV_2),s_2);
-            {120}out(ch, (aenc(s_2,r_3,pkU_1),sign(aenc(s_2,r_3,pkU_1),r'_1,skV_2)));
-            {121}in(chp, s'_1: bitstring);
-            {122}if (s_2 = s'_1) then
-                {123}event SessionV(st_2,unlock,idex_2,idpx_2);
-                {124}event TicketIsValidated(idex_2,idpx_2,rc_3,c_3,pkU_1,pk(skV_2),s_2);
-                {125}insert PlacesValidated(idex_2,idpx_2);
-                {126}insert InvalidTickets(c_3)
+            {119}event SessionV(st_2,lock,idex_2,idpx_2);
+            {120}event ValidatorReceivesValidTicket(idex_2,idpx_2,rc_3,c_3,pkU_1,pk(skV_2));
+            {121}new s_2: bitstring;
+            {122}new r_3: rand;
+            {123}new r'_1: rand;
+            {124}event ValidatorSendsEncryptedRes(idex_2,idpx_2,rc_3,c_3,pkU_1,pk(skV_2),s_2);
+            {125}out(ch, (aenc(s_2,r_3,pkU_1),sign(aenc(s_2,r_3,pkU_1),r'_1,skV_2)));
+            {126}in(chp, s'_1: bitstring);
+            {127}if (s_2 = s'_1) then
+                {128}event SessionV(st_2,unlock,idex_2,idpx_2);
+                {129}event TicketIsValidated(idex_2,idpx_2,rc_3,c_3,pkU_1,pk(skV_2),s_2);
+                {130}insert PlacesValidated(idex_2,idpx_2);
+                {131}insert InvalidTickets(c_3)
             else
-                {127}event SessionV(st_2,unlock,idex_2,idpx_2)
+                {132}event SessionV(st_2,unlock,idex_2,idpx_2)
 ) | (
-    {134}new rt_1: rand;
-    {131}let skU2_1: skey = skU2 in
-    {135}let skU2_rt: skey = randsk(skU2_1,rt_1) in
-    {136}let pkU2_rt_1: pkey = pk(skU2_rt) in
-    {137}out(ch, pkU2_rt_1);
-    {133}let chU2_2: channel = chU2 in
-    {138}out(chU2_2, pkU2_rt_1);
-    {132}let chU1_2: channel = chU1 in
-    {139}in(chU1_2, (idex_3: bitstring,idpx_3: bitstring,pkU1_rt_1: pkey));
-    {140}new r1: rand;
-    {142}event User2SendTransfertRequest(idex_3,idpx_3,pkU1_rt_1,pkU2_rt_1,pkT);
-    {141}let sigma_T2: bitstring = sign((pkU1_rt_1,idex_3,idpx_3),r1,skU2_rt) in
-    {143}out(ch, (pk(skU2_rt),sigma_T2));
-    {144}in(ch, responseT: bitstring);
-    {145}if (checksign(responseT,(idex_3,idpx_3,pk(skU2_rt),pkU1_rt_1),pkT) = (idex_3,idpx_3,pk(skU2_rt),pkU1_rt_1)) then
-    {146}event User2GetTApprobation(idex_3,idpx_3,pkU1_rt_1,pkU2_rt_1,pkT);
-    {147}new rcx: rand;
-    {149}new r2_2: rand;
-    {148}let cx: bitstring = hash((idex_3,idpx_3,rcx)) in
-    {150}event User2SendPurchaseRequest(idex_3,idpx_3,cx,pkU1_rt_1,pk(skU2_rt),pkT);
-    {151}out(ch, aenc((idex_3,idpx_3,rcx),r2_2,pkT));
-    {152}in(ch, sigmacx: bitstring);
-    {153}if (checksign(sigmacx,cx,pkT) = cx) then
-    {154}event User2ReceivesPurchaseResponse(idex_3,idpx_3,cx,sigmacx,pkU1_rt_1,pk(skU2_rt),pkT);
-    {156}insert Paiement(cx);
-    {157}new r3_2: rand;
-    {158}let skU2_r3: skey = randsk(skU2_1,r3_2) in
-    {159}let pkU2_r3: pkey = pk(skU2_r3) in
-    {160}out(ch, pkU2_r3);
-    {161}new r4: rand;
-    {162}event User2SendValidationRequest(idex_3,idpx_3,rcx,cx,pkU2_r3,pkV);
-    {155}let ticketx: bitstring = ((idex_3,idpx_3,rcx),sigmacx) in
-    {163}out(ch, aenc((pkU2_r3,ticketx),r4,pkV));
-    {164}in(ch, (Vresponse_1: bitstring,Vsresponse_1: bitstring));
-    {165}if (checksign(Vsresponse_1,Vresponse_1,pkV) = Vresponse_1) then
-    {166}let s_3: bitstring = adec(Vresponse_1,skU2_r3) in
-    {167}event User2ReceivesValidationResponse(idex_3,idpx_3,rcx,cx,pkU2_r3,pkV,s_3);
-    {168}event User2SendValidationResponseConfirmation(idex_3,idpx_3,rcx,cx,pkU2_r3,pkV,s_3);
-    {169}out(chp, s_3)
+    {139}new rt_1: rand;
+    {136}let skU2_1: skey = skU2 in
+    {140}let skU2_rt: skey = randsk(skU2_1,rt_1) in
+    {141}let pkU2_rt_1: pkey = pk(skU2_rt) in
+    {142}out(ch, pkU2_rt_1);
+    {138}let chU2_2: channel = chU2 in
+    {143}out(chU2_2, pkU2_rt_1);
+    {137}let chU1_2: channel = chU1 in
+    {144}in(chU1_2, (idex_3: bitstring,idpx_3: bitstring,pkU1_rt_1: pkey));
+    {145}new r1: rand;
+    {147}event User2SendTransfertRequest(idex_3,idpx_3,pkU1_rt_1,pkU2_rt_1,pkT);
+    {146}let sigma_T2: bitstring = sign((pkU1_rt_1,idex_3,idpx_3),r1,skU2_rt) in
+    {148}out(ch, (pk(skU2_rt),sigma_T2));
+    {149}in(ch, responseT: bitstring);
+    {150}if (checksign(responseT,(idex_3,idpx_3,pk(skU2_rt),pkU1_rt_1),pkT) = (idex_3,idpx_3,pk(skU2_rt),pkU1_rt_1)) then
+    {151}event User2GetTApprobation(idex_3,idpx_3,pkU1_rt_1,pkU2_rt_1,pkT);
+    {152}new rcx: rand;
+    {154}new r2_2: rand;
+    {153}let cx: bitstring = hash((idex_3,idpx_3,rcx)) in
+    {155}event User2SendPurchaseRequest(idex_3,idpx_3,cx,pkU1_rt_1,pk(skU2_rt),pkT);
+    {156}out(ch, aenc((idex_3,idpx_3,rcx),r2_2,pkT));
+    {157}out(ch, cx);
+    {158}in(ch, sigmacx: bitstring);
+    {159}if (checksign(sigmacx,cx,pkT) = cx) then
+    {160}event User2ReceivesPurchaseResponse(idex_3,idpx_3,cx,sigmacx,pkU1_rt_1,pk(skU2_rt),pkT);
+    {162}insert Paiement(cx);
+    {163}new r3_2: rand;
+    {164}let skU2_r3: skey = randsk(skU2_1,r3_2) in
+    {165}let pkU2_r3: pkey = pk(skU2_r3) in
+    {166}out(ch, pkU2_r3);
+    {167}new r4_1: rand;
+    {168}event User2SendValidationRequest(idex_3,idpx_3,rcx,cx,pkU2_r3,pkV);
+    {161}let ticketx: bitstring = ((idex_3,idpx_3,rcx),sigmacx) in
+    {169}out(ch, aenc((pkU2_r3,ticketx),r4_1,pkV));
+    {170}in(ch, (Vresponse_1: bitstring,Vsresponse_1: bitstring));
+    {171}if (checksign(Vsresponse_1,Vresponse_1,pkV) = Vresponse_1) then
+    {172}let s_3: bitstring = adec(Vresponse_1,skU2_r3) in
+    {173}event User2ReceivesValidationResponse(idex_3,idpx_3,rcx,cx,pkU2_r3,pkV,s_3);
+    {174}event User2SendValidationResponseConfirmation(idex_3,idpx_3,rcx,cx,pkU2_r3,pkV,s_3);
+    {175}out(chp, s_3)
 ) | (
-    {170}!
-    {172}new st_3: stamp;
-    {173}in(ch, requestUser2: bitstring);
-    {174}let (pkU2_rt_2: pkey,sigma_T2_1: bitstring) = requestUser2 in
-    {175}in(ch, requestUser1: bitstring);
-    {176}let (pkU1_rt_2: pkey,sigma_T1_1: bitstring,eticket: bitstring) = requestUser1 in
-    {171}let skT_1: skey = skT in
-    {177}let ((idex_4: bitstring,idpx_4: bitstring,rcx_1: rand),sigmacx_1: bitstring) = adec(eticket,skT_1) in
-    {178}let cx_1: bitstring = hash((idex_4,idpx_4,rcx_1)) in
-    {179}if ((checksign(sigmacx_1,cx_1,pkD) = cx_1) && ((checksign(sigma_T2_1,(pkU1_rt_2,idex_4,idpx_4),pkU2_rt_2) = (pkU1_rt_2,idex_4,idpx_4)) && (checksign(sigma_T1_1,(pkU2_rt_2,cx_1),pkU1_rt_2) = (pkU2_rt_2,cx_1)))) then
-    {199}get InvalidTickets(=cx_1) in
+    {176}!
+    {178}new st_3: stamp;
+    {179}in(ch, requestUser2: bitstring);
+    {180}let (pkU2_rt_2: pkey,sigma_T2_1: bitstring) = requestUser2 in
+    {181}in(ch, requestUser1: bitstring);
+    {182}let (pkU1_rt_2: pkey,sigma_T1_1: bitstring,eticket: bitstring) = requestUser1 in
+    {177}let skT_1: skey = skT in
+    {183}let ((idex_4: bitstring,idpx_4: bitstring,rcx_1: rand),sigmacx_1: bitstring) = adec(eticket,skT_1) in
+    {184}let cx_1: bitstring = hash((idex_4,idpx_4,rcx_1)) in
+    {185}if ((checksign(sigmacx_1,cx_1,pkD) = cx_1) && ((checksign(sigma_T2_1,(pkU1_rt_2,idex_4,idpx_4),pkU2_rt_2) = (pkU1_rt_2,idex_4,idpx_4)) && (checksign(sigma_T1_1,(pkU2_rt_2,cx_1,rcx_1),pkU1_rt_2) = (pkU2_rt_2,cx_1,rcx_1)))) then
+    {205}get InvalidTickets(=cx_1) in
         0
     else
-        {198}get ValidTickets(=cx_1) in
-        {180}event SessionT(st_3,lock,idex_4,idpx_4);
-        {181}event TReceiveTransfertRequest(idex_4,idpx_4,rcx_1,cx_1,pkU1_rt_2,pkU2_rt_2,pk(skT_1));
-        {182}event TSendApprobationU2(idex_4,idpx_4,rcx_1,cx_1,pkU1_rt_2,pkU2_rt_2,pk(skT_1));
-        {183}new r_4: rand;
-        {184}out(ch, sign((idex_4,idpx_4,pkU2_rt_2,pkU1_rt_2),r_4,skT_1));
-        {185}in(ch, request_1: bitstring);
-        {186}let (=idex_4,=idpx_4,rc_4: rand) = adec(request_1,skT_1) in
-        {187}let c_4: bitstring = hash((idex_4,idpx_4,rc_4)) in
-        {188}event TReceivesPurchaseRequest(idex_4,idpx_4,cx_1,c_4,pkU1_rt_2,pkU2_rt_2,pk(skT_1));
-        {189}new r1_1: rand;
-        {190}event TSendsPurchaseResponse(idex_4,idpx_4,cx_1,c_4,sign(c_4,r1_1,skT_1),pkU1_rt_2,pkU2_rt_2,pk(skT_1));
-        {191}out(ch, sign(c_4,r1_1,skT_1));
-        {197}get Paiement(=c_4) in
-            {192}insert ValidTickets(c_4);
-            {193}event SessionT(st_3,unlock,idex_4,idpx_4);
-            {194}event User2HasValidTicket(idex_4,idpx_4,c_4,sign(c_4,r1_1,skT_1),pkU1_rt_2,pk(skT_1))
+        {204}get ValidTickets(=cx_1) in
+        {186}event SessionT(st_3,lock,idex_4,idpx_4);
+        {187}event TReceiveTransfertRequest(idex_4,idpx_4,rcx_1,cx_1,pkU1_rt_2,pkU2_rt_2,pk(skT_1));
+        {188}event TSendApprobationU2(idex_4,idpx_4,rcx_1,cx_1,pkU1_rt_2,pkU2_rt_2,pk(skT_1));
+        {189}new r_4: rand;
+        {190}out(ch, sign((idex_4,idpx_4,pkU2_rt_2,pkU1_rt_2),r_4,skT_1));
+        {191}in(ch, request_1: bitstring);
+        {192}let (=idex_4,=idpx_4,rc_4: rand) = adec(request_1,skT_1) in
+        {193}let c_4: bitstring = hash((idex_4,idpx_4,rc_4)) in
+        {194}event TReceivesPurchaseRequest(idex_4,idpx_4,cx_1,c_4,pkU1_rt_2,pkU2_rt_2,pk(skT_1));
+        {195}new r1_1: rand;
+        {196}event TSendsPurchaseResponse(idex_4,idpx_4,cx_1,c_4,sign(c_4,r1_1,skT_1),pkU1_rt_2,pkU2_rt_2,pk(skT_1));
+        {197}out(ch, sign(c_4,r1_1,skT_1));
+        {203}get Paiement(=c_4) in
+            {198}insert ValidTickets(c_4);
+            {199}event SessionT(st_3,unlock,idex_4,idpx_4);
+            {200}event User2HasValidTicket(idex_4,idpx_4,c_4,sign(c_4,r1_1,skT_1),pkU1_rt_2,pk(skT_1))
         else
-            {195}event SessionT(st_3,unlock,idex_4,idpx_4);
-            {196}insert InvalidTickets(c_4)
+            {201}event SessionT(st_3,unlock,idex_4,idpx_4);
+            {202}insert InvalidTickets(c_4)
+) | (
+    {206}!
+    {208}in(ch, eticket_1: bitstring);
+    {207}let skD_2: skey = skD in
+    {209}let ((idex_5: bitstring,idpx_5: bitstring,rcx_2: bitstring),sigmacx_2: bitstring) = adec(eticket_1,skD_2) in
+    {210}let cx_2: bitstring = hash((idex_5,idpx_5,rcx_2)) in
+    {211}if (checksign(sigmacx_2,cx_2,pk(skD_2)) = cx_2) then
+    {216}get InvalidTickets(=cx_2) in
+        0
+    else
+        {215}get ValidTickets(=cx_2) in
+        {212}insert InvalidTickets(cx_2);
+        {213}event UserIsRefund(idex_5,idpx_5,cx_2,pk(skD_2));
+        {214}insert RefundPaiement(cx_2)
 )
 
 -- Axiom event(SessionD(s_4,p,ide_2,idp_2)) && event(SessionD(s'_2,p',ide_2,idp_2)) ==> s_4 = s'_2 || p ≠ p' in process 1.
@@ -459,11 +501,11 @@ Process 0 (that is, the initial process):
 Translating the process into Horn clauses...
 select attacker(pk(sk))/-5000
 Completing...
-200 rules inserted. Base: 171 rules (42 with conclusion selected). Queue: 54 rules.
-400 rules inserted. Base: 254 rules (47 with conclusion selected). Queue: 44 rules.
-600 rules inserted. Base: 334 rules (55 with conclusion selected). Queue: 17 rules.
+200 rules inserted. Base: 173 rules (43 with conclusion selected). Queue: 49 rules.
+400 rules inserted. Base: 260 rules (50 with conclusion selected). Queue: 42 rules.
+600 rules inserted. Base: 339 rules (58 with conclusion selected). Queue: 21 rules.
 Starting query inj-event(ValidatorReceivesValidTicket(ide_2,idp_2,rc_5,c_5,pkU1_r2_1,pkV_1)) ==> inj-event(User1SendValidationRequest(ide_2,idp_2,rc_5,c_5,pkU1_r2_1,pkV_1)) || inj-event(User2SendValidationRequest(ide_2,idp_2,rc_5,c_5,pkU1_r2_1,pkV_1))
-goal reachable: begin(SessionV(st_4,lock[],ide_2,idp_2)) && begin(User2SendValidationRequest(ide_2,idp_2,rcx_2,hash((ide_2,idp_2,rcx_2)),pk(randsk(skU2_2,r3_3)),pk(skV_3)),@occ162_1) && begin(SessionT(st_5,lock[],ide_2,idp_2)) && begin(SessionD(st_6,lock[],ide_2,idp_2)) -> end(@occ115_1,ValidatorReceivesValidTicket(ide_2,idp_2,rcx_2,hash((ide_2,idp_2,rcx_2)),pk(randsk(skU2_2,r3_3)),pk(skV_3)))
+goal reachable: begin(SessionV(st_4,lock[],ide_2,idp_2)) && begin(User2SendValidationRequest(ide_2,idp_2,rcx_3,hash((ide_2,idp_2,rcx_3)),pk(randsk(skU2_2,r3_3)),pk(skV_3)),@occ168_1) && begin(SessionT(st_5,lock[],ide_2,idp_2)) && begin(SessionD(st_6,lock[],ide_2,idp_2)) -> end(@occ120_1,ValidatorReceivesValidTicket(ide_2,idp_2,rcx_3,hash((ide_2,idp_2,rcx_3)),pk(randsk(skU2_2,r3_3)),pk(skV_3)))
 The 1st, 2nd, 3rd, 4th hypotheses occur strictly before the conclusion.
 Abbreviations:
 skU2_2 = skU2[!1 = @sid]
@@ -473,26 +515,26 @@ rt_2 = rt_1[!1 = @sid]
 skU1_2 = skU1[!1 = @sid]
 rc_5 = rc[!1 = @sid]
 r_5 = r[!1 = @sid]
-skD_2 = skD[!1 = @sid]
-r_6 = r_1[request = aenc((ide_2,idp_2,rc_5),r_5,pk(skD_2)),!2 = @sid_1,!1 = @sid]
-rt_3 = rt[pkU2_rt = pk(randsk(skU2_2,rt_2)),sigmac = sign(hash((ide_2,idp_2,rc_5)),r_6,skD_2),!1 = @sid]
-r2_3 = r2_1[pkU2_rt = pk(randsk(skU2_2,rt_2)),sigmac = sign(hash((ide_2,idp_2,rc_5)),r_6,skD_2),!1 = @sid]
-r3_4 = r3_1[pkU2_rt = pk(randsk(skU2_2,rt_2)),sigmac = sign(hash((ide_2,idp_2,rc_5)),r_6,skD_2),!1 = @sid]
+skD_3 = skD[!1 = @sid]
+r_6 = r_1[request = aenc((ide_2,idp_2,rc_5),r_5,pk(skD_3)),!2 = @sid_1,!1 = @sid]
+rt_3 = rt[pkU2_rt = pk(randsk(skU2_2,rt_2)),sigmac = sign(hash((ide_2,idp_2,rc_5)),r_6,skD_3),!1 = @sid]
+r2_3 = r2_1[pkU2_rt = pk(randsk(skU2_2,rt_2)),sigmac = sign(hash((ide_2,idp_2,rc_5)),r_6,skD_3),!1 = @sid]
+r3_4 = r3_1[pkU2_rt = pk(randsk(skU2_2,rt_2)),sigmac = sign(hash((ide_2,idp_2,rc_5)),r_6,skD_3),!1 = @sid]
 skT_2 = skT[!1 = @sid]
 r1_2 = r1[pkU1_rt_1 = pk(randsk(skU1_2,rt_3)),idpx_3 = idp_2,idex_3 = ide_2,!1 = @sid]
-r_7 = r_4[requestUser1 = (pk(randsk(skU1_2,rt_3)),sign((pk(randsk(skU2_2,rt_2)),hash((ide_2,idp_2,rc_5))),r2_3,randsk(skU1_2,rt_3)),aenc(((ide_2,idp_2,rc_5),sign(hash((ide_2,idp_2,rc_5)),r_6,skD_2)),r3_4,pk(skT_2))),requestUser2 = (pk(randsk(skU2_2,rt_2)),sign((pk(randsk(skU1_2,rt_3)),ide_2,idp_2),r1_2,randsk(skU2_2,rt_2))),!2 = @sid_2,!1 = @sid]
-rcx_2 = rcx[responseT = sign((ide_2,idp_2,pk(randsk(skU2_2,rt_2)),pk(randsk(skU1_2,rt_3))),r_7,skT_2),pkU1_rt_1 = pk(randsk(skU1_2,rt_3)),idpx_3 = idp_2,idex_3 = ide_2,!1 = @sid]
+r_7 = r_4[requestUser1 = (pk(randsk(skU1_2,rt_3)),sign((pk(randsk(skU2_2,rt_2)),hash((ide_2,idp_2,rc_5)),rc_5),r2_3,randsk(skU1_2,rt_3)),aenc(((ide_2,idp_2,rc_5),sign(hash((ide_2,idp_2,rc_5)),r_6,skD_3)),r3_4,pk(skT_2))),requestUser2 = (pk(randsk(skU2_2,rt_2)),sign((pk(randsk(skU1_2,rt_3)),ide_2,idp_2),r1_2,randsk(skU2_2,rt_2))),!2 = @sid_2,!1 = @sid]
+rcx_3 = rcx[responseT = sign((ide_2,idp_2,pk(randsk(skU2_2,rt_2)),pk(randsk(skU1_2,rt_3))),r_7,skT_2),pkU1_rt_1 = pk(randsk(skU1_2,rt_3)),idpx_3 = idp_2,idex_3 = ide_2,!1 = @sid]
 r2_4 = r2_2[responseT = sign((ide_2,idp_2,pk(randsk(skU2_2,rt_2)),pk(randsk(skU1_2,rt_3))),r_7,skT_2),pkU1_rt_1 = pk(randsk(skU1_2,rt_3)),idpx_3 = idp_2,idex_3 = ide_2,!1 = @sid]
-r1_3 = r1_1[request_1 = aenc((ide_2,idp_2,rcx_2),r2_4,pk(skT_2)),requestUser1 = (pk(randsk(skU1_2,rt_3)),sign((pk(randsk(skU2_2,rt_2)),hash((ide_2,idp_2,rc_5))),r2_3,randsk(skU1_2,rt_3)),aenc(((ide_2,idp_2,rc_5),sign(hash((ide_2,idp_2,rc_5)),r_6,skD_2)),r3_4,pk(skT_2))),requestUser2 = (pk(randsk(skU2_2,rt_2)),sign((pk(randsk(skU1_2,rt_3)),ide_2,idp_2),r1_2,randsk(skU2_2,rt_2))),!2 = @sid_2,!1 = @sid]
-r3_3 = r3_2[sigmacx = sign(hash((ide_2,idp_2,rcx_2)),r1_3,skT_2),responseT = sign((ide_2,idp_2,pk(randsk(skU2_2,rt_2)),pk(randsk(skU1_2,rt_3))),r_7,skT_2),pkU1_rt_1 = pk(randsk(skU1_2,rt_3)),idpx_3 = idp_2,idex_3 = ide_2,!1 = @sid]
-r4_1 = r4[sigmacx = sign(hash((ide_2,idp_2,rcx_2)),r1_3,skT_2),responseT = sign((ide_2,idp_2,pk(randsk(skU2_2,rt_2)),pk(randsk(skU1_2,rt_3))),r_7,skT_2),pkU1_rt_1 = pk(randsk(skU1_2,rt_3)),idpx_3 = idp_2,idex_3 = ide_2,!1 = @sid]
+r1_3 = r1_1[request_1 = aenc((ide_2,idp_2,rcx_3),r2_4,pk(skT_2)),requestUser1 = (pk(randsk(skU1_2,rt_3)),sign((pk(randsk(skU2_2,rt_2)),hash((ide_2,idp_2,rc_5)),rc_5),r2_3,randsk(skU1_2,rt_3)),aenc(((ide_2,idp_2,rc_5),sign(hash((ide_2,idp_2,rc_5)),r_6,skD_3)),r3_4,pk(skT_2))),requestUser2 = (pk(randsk(skU2_2,rt_2)),sign((pk(randsk(skU1_2,rt_3)),ide_2,idp_2),r1_2,randsk(skU2_2,rt_2))),!2 = @sid_2,!1 = @sid]
+r3_3 = r3_2[sigmacx = sign(hash((ide_2,idp_2,rcx_3)),r1_3,skT_2),responseT = sign((ide_2,idp_2,pk(randsk(skU2_2,rt_2)),pk(randsk(skU1_2,rt_3))),r_7,skT_2),pkU1_rt_1 = pk(randsk(skU1_2,rt_3)),idpx_3 = idp_2,idex_3 = ide_2,!1 = @sid]
+r4_2 = r4_1[sigmacx = sign(hash((ide_2,idp_2,rcx_3)),r1_3,skT_2),responseT = sign((ide_2,idp_2,pk(randsk(skU2_2,rt_2)),pk(randsk(skU1_2,rt_3))),r_7,skT_2),pkU1_rt_1 = pk(randsk(skU1_2,rt_3)),idpx_3 = idp_2,idex_3 = ide_2,!1 = @sid]
 skV_3 = skV[!1 = @sid]
-@occ115_1 = @occ115[requestVal_1 = aenc((pk(randsk(skU2_2,r3_3)),((ide_2,idp_2,rcx_2),sign(hash((ide_2,idp_2,rcx_2)),r1_3,skT_2))),r4_1,pk(skV_3)),!2 = @sid_3,!1 = @sid]
+@occ120_1 = @occ120[requestVal_1 = aenc((pk(randsk(skU2_2,r3_3)),((ide_2,idp_2,rcx_3),sign(hash((ide_2,idp_2,rcx_3)),r1_3,skT_2))),r4_2,pk(skV_3)),!2 = @sid_3,!1 = @sid]
 st_4 = st_2[!2 = @sid_3,!1 = @sid]
-@occ162_1 = @occ162[sigmacx = sign(hash((ide_2,idp_2,rcx_2)),r1_3,skT_2),responseT = sign((ide_2,idp_2,pk(randsk(skU2_2,rt_2)),pk(randsk(skU1_2,rt_3))),r_7,skT_2),pkU1_rt_1 = pk(randsk(skU1_2,rt_3)),idpx_3 = idp_2,idex_3 = ide_2,!1 = @sid]
+@occ168_1 = @occ168[sigmacx = sign(hash((ide_2,idp_2,rcx_3)),r1_3,skT_2),responseT = sign((ide_2,idp_2,pk(randsk(skU2_2,rt_2)),pk(randsk(skU1_2,rt_3))),r_7,skT_2),pkU1_rt_1 = pk(randsk(skU1_2,rt_3)),idpx_3 = idp_2,idex_3 = ide_2,!1 = @sid]
 st_5 = st_3[!2 = @sid_2,!1 = @sid]
 st_6 = st[!2 = @sid_1,!1 = @sid]
-goal reachable: begin(SessionV(st_4,lock[],ide_2,idp_2)) && begin(User1SendValidationRequest(ide_2,idp_2,rc_5,hash((ide_2,idp_2,rc_5)),pk(randsk(skU1_2,r2_3)),pk(skV_3)),@occ43_1) && begin(SessionD(st_5,lock[],ide_2,idp_2)) -> end(@occ90_1,ValidatorReceivesValidTicket(ide_2,idp_2,rc_5,hash((ide_2,idp_2,rc_5)),pk(randsk(skU1_2,r2_3)),pk(skV_3)))
+goal reachable: begin(SessionV(st_4,lock[],ide_2,idp_2)) && begin(User1SendValidationRequest(ide_2,idp_2,rc_5,hash((ide_2,idp_2,rc_5)),pk(randsk(skU1_2,r2_3)),pk(skV_3)),@occ44_1) && begin(SessionD(st_5,lock[],ide_2,idp_2)) -> end(@occ95_1,ValidatorReceivesValidTicket(ide_2,idp_2,rc_5,hash((ide_2,idp_2,rc_5)),pk(randsk(skU1_2,r2_3)),pk(skV_3)))
 The 1st, 2nd, 3rd hypotheses occur strictly before the conclusion.
 Abbreviations:
 skU1_2 = skU1[!1 = @sid]
@@ -500,14 +542,14 @@ ide_2 = ide[!1 = @sid]
 idp_2 = idp[!1 = @sid]
 rc_5 = rc[!1 = @sid]
 r_5 = r[!1 = @sid]
-skD_2 = skD[!1 = @sid]
-r_6 = r_1[request = aenc((ide_2,idp_2,rc_5),r_5,pk(skD_2)),!2 = @sid_1,!1 = @sid]
-r2_3 = r2[sigmac = sign(hash((ide_2,idp_2,rc_5)),r_6,skD_2),!1 = @sid]
-r3_3 = r3[sigmac = sign(hash((ide_2,idp_2,rc_5)),r_6,skD_2),!1 = @sid]
+skD_3 = skD[!1 = @sid]
+r_6 = r_1[request = aenc((ide_2,idp_2,rc_5),r_5,pk(skD_3)),!2 = @sid_1,!1 = @sid]
+r2_3 = r2[sigmac = sign(hash((ide_2,idp_2,rc_5)),r_6,skD_3),!1 = @sid]
+r3_3 = r3[sigmac = sign(hash((ide_2,idp_2,rc_5)),r_6,skD_3),!1 = @sid]
 skV_3 = skV[!1 = @sid]
-@occ90_1 = @occ90[requestVal = aenc((pk(randsk(skU1_2,r2_3)),((ide_2,idp_2,rc_5),sign(hash((ide_2,idp_2,rc_5)),r_6,skD_2))),r3_3,pk(skV_3)),!2 = @sid_2,!1 = @sid]
+@occ95_1 = @occ95[requestVal = aenc((pk(randsk(skU1_2,r2_3)),((ide_2,idp_2,rc_5),sign(hash((ide_2,idp_2,rc_5)),r_6,skD_3))),r3_3,pk(skV_3)),!2 = @sid_2,!1 = @sid]
 st_4 = st_1[!2 = @sid_2,!1 = @sid]
-@occ43_1 = @occ43[sigmac = sign(hash((ide_2,idp_2,rc_5)),r_6,skD_2),!1 = @sid]
+@occ44_1 = @occ44[sigmac = sign(hash((ide_2,idp_2,rc_5)),r_6,skD_3),!1 = @sid]
 st_5 = st[!2 = @sid_1,!1 = @sid]
 RESULT inj-event(ValidatorReceivesValidTicket(ide_2,idp_2,rc_5,c_5,pkU1_r2_1,pkV_1)) ==> inj-event(User1SendValidationRequest(ide_2,idp_2,rc_5,c_5,pkU1_r2_1,pkV_1)) || inj-event(User2SendValidationRequest(ide_2,idp_2,rc_5,c_5,pkU1_r2_1,pkV_1)) is true.
 
