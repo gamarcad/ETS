@@ -10,4 +10,6 @@ The security properties can be verified by running the following command.
 ```
 proverif <property>.pv
 ```
-where `<property>` can be 
+where `<property>` can be `Anonymity_User1`, `Anonymity_User2`, `Double_Refund`, `Double_Transfert`, `Double_Validate`, `Secrecy_of_Ticket`, `Authentication_User_And_D`, `Authentication_User_And_V` and `Authentication_Users_And_T`.
+
+
