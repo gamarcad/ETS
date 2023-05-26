@@ -1,0 +1,608 @@
+Biprocess 0 (that is, the initial process):
+{1}!
+{2}new skU1: skey;
+{3}let pkU1: pkey = pk(skU1) in
+{4}out(ch, skU1);
+{5}new skU2: skey;
+{6}let pkU2: pkey = pk(skU2) in
+{7}out(ch, pkU2);
+{8}new skU2': skey;
+{9}let pkU2': pkey = pk(skU2') in
+{10}out(ch, pkU2');
+{11}let skU: skey = choice[skU2,skU2'] in
+{12}let skU': skey = choice[skU2',skU2] in
+{13}new skD: skey;
+{14}let pkD: pkey = pk(skD) in
+{15}out(ch, pkD);
+{16}new skT: skey;
+{17}let pkT: pkey = pk(skT) in
+{18}out(ch, pkT);
+{19}new skV: skey;
+{20}let pkV: pkey = pk(skV) in
+{21}out(ch, pkV);
+{22}new ide: bitstring;
+{23}out(ch, ide);
+{24}new idp: bitstring;
+{25}out(ch, idp);
+{26}new idp': bitstring;
+{27}out(ch, idp');
+{28}new chU1: channel;
+{29}new chU2: channel;
+{30}new chU1': channel;
+{31}new chU2': channel;
+(
+    {32}let skU1_1: skey = skU1 in
+    {33}let ide_1: bitstring = ide in
+    {34}let idp_1: bitstring = idp in
+    {35}let chU1_1: channel = chU1 in
+    {36}let chU2_1: channel = chU2 in
+    {37}new rc: rand;
+    {38}let c: bitstring = hash((ide_1,idp_1,rc)) in
+    {39}new r: rand;
+    {40}out(ch, aenc((ide_1,idp_1,rc),r,pkD));
+    {41}in(ch, sigmac: bitstring);
+    {42}if (checksign(sigmac,c,pkD) = c) then
+    {43}let ticket: bitstring = ((ide_1,idp_1,rc),sigmac) in
+    {44}insert Paiement(c);
+    (
+        {45}new r2: rand;
+        {46}let skU1_r2: skey = randsk(skU1_1,r2) in
+        {47}let pkU1_r2: pkey = pk(skU1_r2) in
+        {48}out(ch, pkU1_r2);
+        {49}new r3: rand;
+        {50}out(ch, aenc((pkU1_r2,ticket),r3,pkV));
+        {51}in(ch, (Vresponse: bitstring,Vsresponse: bitstring));
+        {52}if (checksign(Vsresponse,Vresponse,pkV) = Vresponse) then
+        {53}let s: bitstring = adec(Vresponse,skU1_r2) in
+        {54}out(chp, s)
+    ) | (
+        {55}in(chU2_1, pkU2_rt: pkey);
+        {56}out(ch, pkU2_rt);
+        {57}new rt: rand;
+        {58}let skU1_rt: skey = randsk(skU1_1,rt) in
+        {59}let pkU1_rt: pkey = pk(skU1_rt) in
+        {60}out(ch, pkU1_rt);
+        {61}out(ch, (ide_1,idp_1,pkU1_rt));
+        {62}out(chU1_1, (ide_1,idp_1,pkU1_rt));
+        {63}new r2_1: rand;
+        {64}let sigma_T1: bitstring = sign((pkU2_rt,c),r2_1,skU1_rt) in
+        {65}new r3_1: rand;
+        {66}out(ch, (pk(skU1_rt),sigma_T1,aenc(ticket,r3_1,pkT)))
+    )
+) | (
+    {67}let skU1_2: skey = skU1 in
+    {68}let ide_2: bitstring = ide in
+    {69}let idp_2: bitstring = idp' in
+    {70}let chU1_2: channel = chU1' in
+    {71}let chU2_2: channel = chU2' in
+    {72}new rc_1: rand;
+    {73}let c_1: bitstring = hash((ide_2,idp_2,rc_1)) in
+    {74}new r_1: rand;
+    {75}out(ch, aenc((ide_2,idp_2,rc_1),r_1,pkD));
+    {76}in(ch, sigmac_1: bitstring);
+    {77}if (checksign(sigmac_1,c_1,pkD) = c_1) then
+    {78}let ticket_1: bitstring = ((ide_2,idp_2,rc_1),sigmac_1) in
+    {79}insert Paiement(c_1);
+    (
+        {80}new r2_2: rand;
+        {81}let skU1_r2_1: skey = randsk(skU1_2,r2_2) in
+        {82}let pkU1_r2_1: pkey = pk(skU1_r2_1) in
+        {83}out(ch, pkU1_r2_1);
+        {84}new r3_2: rand;
+        {85}out(ch, aenc((pkU1_r2_1,ticket_1),r3_2,pkV));
+        {86}in(ch, (Vresponse_1: bitstring,Vsresponse_1: bitstring));
+        {87}if (checksign(Vsresponse_1,Vresponse_1,pkV) = Vresponse_1) then
+        {88}let s_1: bitstring = adec(Vresponse_1,skU1_r2_1) in
+        {89}out(chp, s_1)
+    ) | (
+        {90}in(chU2_2, pkU2_rt_1: pkey);
+        {91}out(ch, pkU2_rt_1);
+        {92}new rt_1: rand;
+        {93}let skU1_rt_1: skey = randsk(skU1_2,rt_1) in
+        {94}let pkU1_rt_1: pkey = pk(skU1_rt_1) in
+        {95}out(ch, pkU1_rt_1);
+        {96}out(ch, (ide_2,idp_2,pkU1_rt_1));
+        {97}out(chU1_2, (ide_2,idp_2,pkU1_rt_1));
+        {98}new r2_3: rand;
+        {99}let sigma_T1_1: bitstring = sign((pkU2_rt_1,c_1),r2_3,skU1_rt_1) in
+        {100}new r3_3: rand;
+        {101}out(ch, (pk(skU1_rt_1),sigma_T1_1,aenc(ticket_1,r3_3,pkT)))
+    )
+) | (
+    {102}!
+    {103}let skD_1: skey = skD in
+    {104}new st: stamp;
+    {105}in(ch, request: bitstring);
+    {106}let (idex: bitstring,idpx: bitstring,rc_2: rand) = adec(request,skD_1) in
+    {116}get Places(=idex,=idpx) in
+        0
+    else
+        {107}let c_2: bitstring = hash((idex,idpx,rc_2)) in
+        {108}new r_2: rand;
+        {109}out(ch, sign(c_2,r_2,skD_1));
+        {115}get Paiement(=c_2) in
+            {110}insert Places(idex,idpx);
+            {111}insert ValidTickets(c_2);
+            {112}event SessionD(st,unlock,idex,idpx)
+        else
+            {113}insert InvalidTickets(c_2);
+            {114}event SessionD(st,unlock,idex,idpx)
+) | (
+    {117}!
+    {118}let skV_1: skey = skV in
+    {119}new st_1: stamp;
+    {120}in(ch, requestVal: bitstring);
+    {121}let (pkU: pkey,ticket_2: bitstring) = adec(requestVal,skV_1) in
+    {122}let ((idex_1: bitstring,idpx_1: bitstring,rc_3: rand),sigmac_2: bitstring) = ticket_2 in
+    {123}let c_3: bitstring = hash((idex_1,idpx_1,rc_3)) in
+    {124}if (checksign(sigmac_2,c_3,pkD) = c_3) then
+    {138}get InvalidTickets(=c_3) in
+        0
+    else
+        {137}get ValidTickets(=c_3) in
+        {136}get PlacesValidated(=idex_1,=idpx_1) in
+            0
+        else
+            {125}event SessionV(st_1,lock,idex_1,idpx_1);
+            {126}new s_2: bitstring;
+            {127}new r_3: rand;
+            {128}new r': rand;
+            {129}out(ch, (aenc(s_2,r_3,pkU),sign(aenc(s_2,r_3,pkU),r',skV_1)));
+            {130}in(chp, s': bitstring);
+            {131}if (s_2 = s') then
+                {132}insert PlacesValidated(idex_1,idpx_1);
+                {133}insert InvalidTickets(c_3);
+                {134}event SessionV(st_1,unlock,idex_1,idpx_1)
+            else
+                {135}event SessionV(st_1,unlock,idex_1,idpx_1)
+) | (
+    {139}!
+    {140}let skV_2: skey = skV in
+    {141}new st_2: stamp;
+    {142}in(ch, requestVal_1: bitstring);
+    {143}let (pkU_1: pkey,ticket_3: bitstring) = adec(requestVal_1,skV_2) in
+    {144}let ((idex_2: bitstring,idpx_2: bitstring,rc_4: rand),sigmac_3: bitstring) = ticket_3 in
+    {145}let c_4: bitstring = hash((idex_2,idpx_2,rc_4)) in
+    {146}if (checksign(sigmac_3,c_4,pkT) = c_4) then
+    {160}get InvalidTickets(=c_4) in
+        0
+    else
+        {159}get ValidTickets(=c_4) in
+        {158}get PlacesValidated(=idex_2,=idpx_2) in
+            0
+        else
+            {147}event SessionV(st_2,lock,idex_2,idpx_2);
+            {148}new s_3: bitstring;
+            {149}new r_4: rand;
+            {150}new r'_1: rand;
+            {151}out(ch, (aenc(s_3,r_4,pkU_1),sign(aenc(s_3,r_4,pkU_1),r'_1,skV_2)));
+            {152}in(chp, s'_1: bitstring);
+            {153}if (s_3 = s'_1) then
+                {154}insert PlacesValidated(idex_2,idpx_2);
+                {155}insert InvalidTickets(c_4);
+                {156}event SessionV(st_2,unlock,idex_2,idpx_2)
+            else
+                {157}event SessionV(st_2,unlock,idex_2,idpx_2)
+) | (
+    {161}let chU1_3: channel = chU1 in
+    {162}let chU2_3: channel = chU2 in
+    {163}new rt_2: rand;
+    {164}let skU2_rt: skey = randsk(skU,rt_2) in
+    {165}let pkU2_rt_2: pkey = pk(skU2_rt) in
+    {166}out(ch, pkU2_rt_2);
+    {167}out(chU2_3, pkU2_rt_2);
+    {168}in(chU1_3, (idex_3: bitstring,idpx_3: bitstring,pkU1_rt_2: pkey));
+    {169}new r1: rand;
+    {170}let sigma_T2: bitstring = sign((pkU1_rt_2,idex_3,idpx_3),r1,skU2_rt) in
+    {171}out(ch, (pk(skU2_rt),sigma_T2));
+    {172}in(ch, responseT: bitstring);
+    {173}if (checksign(responseT,(idex_3,idpx_3,pk(skU2_rt),pkU1_rt_2),pkT) = (idex_3,idpx_3,pk(skU2_rt),pkU1_rt_2)) then
+    {174}new rcx: rand;
+    {175}let cx: bitstring = hash((idex_3,idpx_3,rcx)) in
+    {176}new r2_4: rand;
+    {177}out(ch, aenc((idex_3,idpx_3,rcx),r2_4,pkT));
+    {178}in(ch, sigmacx: bitstring);
+    {179}if (checksign(sigmacx,cx,pkT) = cx) then
+    {180}let ticketx: bitstring = ((idex_3,idpx_3,rcx),sigmacx) in
+    {181}insert Paiement(cx);
+    {182}new r3_4: rand;
+    {183}let skU2_r3: skey = randsk(skU,r3_4) in
+    {184}let pkU2_r3: pkey = pk(skU2_r3) in
+    {185}out(ch, pkU2_r3);
+    {186}new r4: rand;
+    {187}out(ch, aenc((pkU2_r3,ticketx),r4,pkV));
+    {188}in(ch, (Vresponse_2: bitstring,Vsresponse_2: bitstring));
+    {189}if (checksign(Vsresponse_2,Vresponse_2,pkV) = Vresponse_2) then
+    {190}let s_4: bitstring = adec(Vresponse_2,skU2_r3) in
+    {191}out(chp, s_4)
+) | (
+    {192}let chU1_4: channel = chU1' in
+    {193}let chU2_4: channel = chU2' in
+    {194}new rt_3: rand;
+    {195}let skU2_rt_1: skey = randsk(skU',rt_3) in
+    {196}let pkU2_rt_3: pkey = pk(skU2_rt_1) in
+    {197}out(ch, pkU2_rt_3);
+    {198}out(chU2_4, pkU2_rt_3);
+    {199}in(chU1_4, (idex_4: bitstring,idpx_4: bitstring,pkU1_rt_3: pkey));
+    {200}new r1_1: rand;
+    {201}let sigma_T2_1: bitstring = sign((pkU1_rt_3,idex_4,idpx_4),r1_1,skU2_rt_1) in
+    {202}out(ch, (pk(skU2_rt_1),sigma_T2_1));
+    {203}in(ch, responseT_1: bitstring);
+    {204}if (checksign(responseT_1,(idex_4,idpx_4,pk(skU2_rt_1),pkU1_rt_3),pkT) = (idex_4,idpx_4,pk(skU2_rt_1),pkU1_rt_3)) then
+    {205}new rcx_1: rand;
+    {206}let cx_1: bitstring = hash((idex_4,idpx_4,rcx_1)) in
+    {207}new r2_5: rand;
+    {208}out(ch, aenc((idex_4,idpx_4,rcx_1),r2_5,pkT));
+    {209}in(ch, sigmacx_1: bitstring);
+    {210}if (checksign(sigmacx_1,cx_1,pkT) = cx_1) then
+    {211}let ticketx_1: bitstring = ((idex_4,idpx_4,rcx_1),sigmacx_1) in
+    {212}insert Paiement(cx_1);
+    {213}new r3_5: rand;
+    {214}let skU2_r3_1: skey = randsk(skU',r3_5) in
+    {215}let pkU2_r3_1: pkey = pk(skU2_r3_1) in
+    {216}out(ch, pkU2_r3_1);
+    {217}new r4_1: rand;
+    {218}out(ch, aenc((pkU2_r3_1,ticketx_1),r4_1,pkV));
+    {219}in(ch, (Vresponse_3: bitstring,Vsresponse_3: bitstring));
+    {220}if (checksign(Vsresponse_3,Vresponse_3,pkV) = Vresponse_3) then
+    {221}let s_5: bitstring = adec(Vresponse_3,skU2_r3_1) in
+    {222}out(chp, s_5)
+) | (
+    {223}!
+    {224}let skT_1: skey = skT in
+    {225}new st_3: stamp;
+    {226}in(ch, requestUser2: bitstring);
+    {227}let (pkU2_rt_4: pkey,sigma_T2_2: bitstring) = requestUser2 in
+    {228}in(ch, requestUser1: bitstring);
+    {229}let (pkU1_rt_4: pkey,sigma_T1_2: bitstring,eticket: bitstring) = requestUser1 in
+    {230}let ((idex_5: bitstring,idpx_5: bitstring,rcx_2: rand),sigmacx_2: bitstring) = adec(eticket,skT_1) in
+    {231}let cx_2: bitstring = hash((idex_5,idpx_5,rcx_2)) in
+    {232}if ((checksign(sigmacx_2,cx_2,pkD) = cx_2) && ((checksign(sigma_T2_2,(pkU1_rt_4,idex_5,idpx_5),pkU2_rt_4) = (pkU1_rt_4,idex_5,idpx_5)) && (checksign(sigma_T1_2,(pkU2_rt_4,cx_2),pkU1_rt_4) = (pkU2_rt_4,cx_2)))) then
+    {247}get InvalidTickets(=cx_2) in
+        0
+    else
+        {246}get ValidTickets(=cx_2) in
+        {233}event SessionT(st_3,lock,idex_5,idpx_5);
+        {234}new r_5: rand;
+        {235}out(ch, sign((idex_5,idpx_5,pkU2_rt_4,pkU1_rt_4),r_5,skT_1));
+        {236}in(ch, request_1: bitstring);
+        {237}let (=idex_5,=idpx_5,rc_5: rand) = adec(request_1,skT_1) in
+        {238}let c_5: bitstring = hash((idex_5,idpx_5,rc_5)) in
+        {239}new r1_2: rand;
+        {240}out(ch, sign(c_5,r1_2,skT_1));
+        {245}get Paiement(=c_5) in
+            {241}insert ValidTickets(c_5);
+            {242}event SessionT(st_3,unlock,idex_5,idpx_5)
+        else
+            {243}insert InvalidTickets(c_5);
+            {244}event SessionT(st_3,unlock,idex_5,idpx_5)
+)
+
+--  Biprocess 1 (that is, biprocess 0, with let moved downwards):
+{1}!
+{2}new skU1: skey;
+{4}out(ch, skU1);
+{5}new skU2: skey;
+{6}let pkU2: pkey = pk(skU2) in
+{7}out(ch, pkU2);
+{8}new skU2': skey;
+{9}let pkU2': pkey = pk(skU2') in
+{10}out(ch, pkU2');
+{13}new skD: skey;
+{14}let pkD: pkey = pk(skD) in
+{15}out(ch, pkD);
+{16}new skT: skey;
+{17}let pkT: pkey = pk(skT) in
+{18}out(ch, pkT);
+{19}new skV: skey;
+{20}let pkV: pkey = pk(skV) in
+{21}out(ch, pkV);
+{22}new ide: bitstring;
+{23}out(ch, ide);
+{24}new idp: bitstring;
+{25}out(ch, idp);
+{26}new idp': bitstring;
+{27}out(ch, idp');
+{28}new chU1: channel;
+{29}new chU2: channel;
+{30}new chU1': channel;
+{31}new chU2': channel;
+(
+    {37}new rc: rand;
+    {39}new r: rand;
+    {34}let idp_1: bitstring = idp in
+    {33}let ide_1: bitstring = ide in
+    {40}out(ch, aenc((ide_1,idp_1,rc),r,pkD));
+    {41}in(ch, sigmac: bitstring);
+    {38}let c: bitstring = hash((ide_1,idp_1,rc)) in
+    {42}if (checksign(sigmac,c,pkD) = c) then
+    {44}insert Paiement(c);
+    {43}let ticket: bitstring = ((ide_1,idp_1,rc),sigmac) in
+    {32}let skU1_1: skey = skU1 in
+    (
+        {45}new r2: rand;
+        {46}let skU1_r2: skey = randsk(skU1_1,r2) in
+        {47}let pkU1_r2: pkey = pk(skU1_r2) in
+        {48}out(ch, pkU1_r2);
+        {49}new r3: rand;
+        {50}out(ch, aenc((pkU1_r2,ticket),r3,pkV));
+        {51}in(ch, (Vresponse: bitstring,Vsresponse: bitstring));
+        {52}if (checksign(Vsresponse,Vresponse,pkV) = Vresponse) then
+        {53}let s: bitstring = adec(Vresponse,skU1_r2) in
+        {54}out(chp, s)
+    ) | (
+        {36}let chU2_1: channel = chU2 in
+        {55}in(chU2_1, pkU2_rt: pkey);
+        {56}out(ch, pkU2_rt);
+        {57}new rt: rand;
+        {58}let skU1_rt: skey = randsk(skU1_1,rt) in
+        {59}let pkU1_rt: pkey = pk(skU1_rt) in
+        {60}out(ch, pkU1_rt);
+        {61}out(ch, (ide_1,idp_1,pkU1_rt));
+        {35}let chU1_1: channel = chU1 in
+        {62}out(chU1_1, (ide_1,idp_1,pkU1_rt));
+        {63}new r2_1: rand;
+        {65}new r3_1: rand;
+        {64}let sigma_T1: bitstring = sign((pkU2_rt,c),r2_1,skU1_rt) in
+        {66}out(ch, (pk(skU1_rt),sigma_T1,aenc(ticket,r3_1,pkT)))
+    )
+) | (
+    {72}new rc_1: rand;
+    {74}new r_1: rand;
+    {69}let idp_2: bitstring = idp' in
+    {68}let ide_2: bitstring = ide in
+    {75}out(ch, aenc((ide_2,idp_2,rc_1),r_1,pkD));
+    {76}in(ch, sigmac_1: bitstring);
+    {73}let c_1: bitstring = hash((ide_2,idp_2,rc_1)) in
+    {77}if (checksign(sigmac_1,c_1,pkD) = c_1) then
+    {79}insert Paiement(c_1);
+    {78}let ticket_1: bitstring = ((ide_2,idp_2,rc_1),sigmac_1) in
+    {67}let skU1_2: skey = skU1 in
+    (
+        {80}new r2_2: rand;
+        {81}let skU1_r2_1: skey = randsk(skU1_2,r2_2) in
+        {82}let pkU1_r2_1: pkey = pk(skU1_r2_1) in
+        {83}out(ch, pkU1_r2_1);
+        {84}new r3_2: rand;
+        {85}out(ch, aenc((pkU1_r2_1,ticket_1),r3_2,pkV));
+        {86}in(ch, (Vresponse_1: bitstring,Vsresponse_1: bitstring));
+        {87}if (checksign(Vsresponse_1,Vresponse_1,pkV) = Vresponse_1) then
+        {88}let s_1: bitstring = adec(Vresponse_1,skU1_r2_1) in
+        {89}out(chp, s_1)
+    ) | (
+        {71}let chU2_2: channel = chU2' in
+        {90}in(chU2_2, pkU2_rt_1: pkey);
+        {91}out(ch, pkU2_rt_1);
+        {92}new rt_1: rand;
+        {93}let skU1_rt_1: skey = randsk(skU1_2,rt_1) in
+        {94}let pkU1_rt_1: pkey = pk(skU1_rt_1) in
+        {95}out(ch, pkU1_rt_1);
+        {96}out(ch, (ide_2,idp_2,pkU1_rt_1));
+        {70}let chU1_2: channel = chU1' in
+        {97}out(chU1_2, (ide_2,idp_2,pkU1_rt_1));
+        {98}new r2_3: rand;
+        {100}new r3_3: rand;
+        {99}let sigma_T1_1: bitstring = sign((pkU2_rt_1,c_1),r2_3,skU1_rt_1) in
+        {101}out(ch, (pk(skU1_rt_1),sigma_T1_1,aenc(ticket_1,r3_3,pkT)))
+    )
+) | (
+    {102}!
+    {104}new st: stamp;
+    {105}in(ch, request: bitstring);
+    {103}let skD_1: skey = skD in
+    {106}let (idex: bitstring,idpx: bitstring,rc_2: rand) = adec(request,skD_1) in
+    {116}get Places(=idex,=idpx) in
+        0
+    else
+        {108}new r_2: rand;
+        {107}let c_2: bitstring = hash((idex,idpx,rc_2)) in
+        {109}out(ch, sign(c_2,r_2,skD_1));
+        {115}get Paiement(=c_2) in
+            {110}insert Places(idex,idpx);
+            {111}insert ValidTickets(c_2);
+            {112}event SessionD(st,unlock,idex,idpx)
+        else
+            {113}insert InvalidTickets(c_2);
+            {114}event SessionD(st,unlock,idex,idpx)
+) | (
+    {117}!
+    {119}new st_1: stamp;
+    {120}in(ch, requestVal: bitstring);
+    {118}let skV_1: skey = skV in
+    {121}let (pkU: pkey,ticket_2: bitstring) = adec(requestVal,skV_1) in
+    {122}let ((idex_1: bitstring,idpx_1: bitstring,rc_3: rand),sigmac_2: bitstring) = ticket_2 in
+    {123}let c_3: bitstring = hash((idex_1,idpx_1,rc_3)) in
+    {124}if (checksign(sigmac_2,c_3,pkD) = c_3) then
+    {138}get InvalidTickets(=c_3) in
+        0
+    else
+        {137}get ValidTickets(=c_3) in
+        {136}get PlacesValidated(=idex_1,=idpx_1) in
+            0
+        else
+            {125}event SessionV(st_1,lock,idex_1,idpx_1);
+            {126}new s_2: bitstring;
+            {127}new r_3: rand;
+            {128}new r': rand;
+            {129}out(ch, (aenc(s_2,r_3,pkU),sign(aenc(s_2,r_3,pkU),r',skV_1)));
+            {130}in(chp, s': bitstring);
+            {131}if (s_2 = s') then
+                {132}insert PlacesValidated(idex_1,idpx_1);
+                {133}insert InvalidTickets(c_3);
+                {134}event SessionV(st_1,unlock,idex_1,idpx_1)
+            else
+                {135}event SessionV(st_1,unlock,idex_1,idpx_1)
+) | (
+    {139}!
+    {141}new st_2: stamp;
+    {142}in(ch, requestVal_1: bitstring);
+    {140}let skV_2: skey = skV in
+    {143}let (pkU_1: pkey,ticket_3: bitstring) = adec(requestVal_1,skV_2) in
+    {144}let ((idex_2: bitstring,idpx_2: bitstring,rc_4: rand),sigmac_3: bitstring) = ticket_3 in
+    {145}let c_4: bitstring = hash((idex_2,idpx_2,rc_4)) in
+    {146}if (checksign(sigmac_3,c_4,pkT) = c_4) then
+    {160}get InvalidTickets(=c_4) in
+        0
+    else
+        {159}get ValidTickets(=c_4) in
+        {158}get PlacesValidated(=idex_2,=idpx_2) in
+            0
+        else
+            {147}event SessionV(st_2,lock,idex_2,idpx_2);
+            {148}new s_3: bitstring;
+            {149}new r_4: rand;
+            {150}new r'_1: rand;
+            {151}out(ch, (aenc(s_3,r_4,pkU_1),sign(aenc(s_3,r_4,pkU_1),r'_1,skV_2)));
+            {152}in(chp, s'_1: bitstring);
+            {153}if (s_3 = s'_1) then
+                {154}insert PlacesValidated(idex_2,idpx_2);
+                {155}insert InvalidTickets(c_4);
+                {156}event SessionV(st_2,unlock,idex_2,idpx_2)
+            else
+                {157}event SessionV(st_2,unlock,idex_2,idpx_2)
+) | (
+    {163}new rt_2: rand;
+    {11}let skU: skey = choice[skU2,skU2'] in
+    {164}let skU2_rt: skey = randsk(skU,rt_2) in
+    {165}let pkU2_rt_2: pkey = pk(skU2_rt) in
+    {166}out(ch, pkU2_rt_2);
+    {162}let chU2_3: channel = chU2 in
+    {167}out(chU2_3, pkU2_rt_2);
+    {161}let chU1_3: channel = chU1 in
+    {168}in(chU1_3, (idex_3: bitstring,idpx_3: bitstring,pkU1_rt_2: pkey));
+    {169}new r1: rand;
+    {170}let sigma_T2: bitstring = sign((pkU1_rt_2,idex_3,idpx_3),r1,skU2_rt) in
+    {171}out(ch, (pk(skU2_rt),sigma_T2));
+    {172}in(ch, responseT: bitstring);
+    {173}if (checksign(responseT,(idex_3,idpx_3,pk(skU2_rt),pkU1_rt_2),pkT) = (idex_3,idpx_3,pk(skU2_rt),pkU1_rt_2)) then
+    {174}new rcx: rand;
+    {176}new r2_4: rand;
+    {177}out(ch, aenc((idex_3,idpx_3,rcx),r2_4,pkT));
+    {178}in(ch, sigmacx: bitstring);
+    {175}let cx: bitstring = hash((idex_3,idpx_3,rcx)) in
+    {179}if (checksign(sigmacx,cx,pkT) = cx) then
+    {181}insert Paiement(cx);
+    {182}new r3_4: rand;
+    {183}let skU2_r3: skey = randsk(skU,r3_4) in
+    {184}let pkU2_r3: pkey = pk(skU2_r3) in
+    {185}out(ch, pkU2_r3);
+    {186}new r4: rand;
+    {180}let ticketx: bitstring = ((idex_3,idpx_3,rcx),sigmacx) in
+    {187}out(ch, aenc((pkU2_r3,ticketx),r4,pkV));
+    {188}in(ch, (Vresponse_2: bitstring,Vsresponse_2: bitstring));
+    {189}if (checksign(Vsresponse_2,Vresponse_2,pkV) = Vresponse_2) then
+    {190}let s_4: bitstring = adec(Vresponse_2,skU2_r3) in
+    {191}out(chp, s_4)
+) | (
+    {194}new rt_3: rand;
+    {12}let skU': skey = choice[skU2',skU2] in
+    {195}let skU2_rt_1: skey = randsk(skU',rt_3) in
+    {196}let pkU2_rt_3: pkey = pk(skU2_rt_1) in
+    {197}out(ch, pkU2_rt_3);
+    {193}let chU2_4: channel = chU2' in
+    {198}out(chU2_4, pkU2_rt_3);
+    {192}let chU1_4: channel = chU1' in
+    {199}in(chU1_4, (idex_4: bitstring,idpx_4: bitstring,pkU1_rt_3: pkey));
+    {200}new r1_1: rand;
+    {201}let sigma_T2_1: bitstring = sign((pkU1_rt_3,idex_4,idpx_4),r1_1,skU2_rt_1) in
+    {202}out(ch, (pk(skU2_rt_1),sigma_T2_1));
+    {203}in(ch, responseT_1: bitstring);
+    {204}if (checksign(responseT_1,(idex_4,idpx_4,pk(skU2_rt_1),pkU1_rt_3),pkT) = (idex_4,idpx_4,pk(skU2_rt_1),pkU1_rt_3)) then
+    {205}new rcx_1: rand;
+    {207}new r2_5: rand;
+    {208}out(ch, aenc((idex_4,idpx_4,rcx_1),r2_5,pkT));
+    {209}in(ch, sigmacx_1: bitstring);
+    {206}let cx_1: bitstring = hash((idex_4,idpx_4,rcx_1)) in
+    {210}if (checksign(sigmacx_1,cx_1,pkT) = cx_1) then
+    {212}insert Paiement(cx_1);
+    {213}new r3_5: rand;
+    {214}let skU2_r3_1: skey = randsk(skU',r3_5) in
+    {215}let pkU2_r3_1: pkey = pk(skU2_r3_1) in
+    {216}out(ch, pkU2_r3_1);
+    {217}new r4_1: rand;
+    {211}let ticketx_1: bitstring = ((idex_4,idpx_4,rcx_1),sigmacx_1) in
+    {218}out(ch, aenc((pkU2_r3_1,ticketx_1),r4_1,pkV));
+    {219}in(ch, (Vresponse_3: bitstring,Vsresponse_3: bitstring));
+    {220}if (checksign(Vsresponse_3,Vresponse_3,pkV) = Vresponse_3) then
+    {221}let s_5: bitstring = adec(Vresponse_3,skU2_r3_1) in
+    {222}out(chp, s_5)
+) | (
+    {223}!
+    {225}new st_3: stamp;
+    {226}in(ch, requestUser2: bitstring);
+    {227}let (pkU2_rt_4: pkey,sigma_T2_2: bitstring) = requestUser2 in
+    {228}in(ch, requestUser1: bitstring);
+    {229}let (pkU1_rt_4: pkey,sigma_T1_2: bitstring,eticket: bitstring) = requestUser1 in
+    {224}let skT_1: skey = skT in
+    {230}let ((idex_5: bitstring,idpx_5: bitstring,rcx_2: rand),sigmacx_2: bitstring) = adec(eticket,skT_1) in
+    {231}let cx_2: bitstring = hash((idex_5,idpx_5,rcx_2)) in
+    {232}if ((checksign(sigmacx_2,cx_2,pkD) = cx_2) && ((checksign(sigma_T2_2,(pkU1_rt_4,idex_5,idpx_5),pkU2_rt_4) = (pkU1_rt_4,idex_5,idpx_5)) && (checksign(sigma_T1_2,(pkU2_rt_4,cx_2),pkU1_rt_4) = (pkU2_rt_4,cx_2)))) then
+    {247}get InvalidTickets(=cx_2) in
+        0
+    else
+        {246}get ValidTickets(=cx_2) in
+        {233}event SessionT(st_3,lock,idex_5,idpx_5);
+        {234}new r_5: rand;
+        {235}out(ch, sign((idex_5,idpx_5,pkU2_rt_4,pkU1_rt_4),r_5,skT_1));
+        {236}in(ch, request_1: bitstring);
+        {237}let (=idex_5,=idpx_5,rc_5: rand) = adec(request_1,skT_1) in
+        {239}new r1_2: rand;
+        {238}let c_5: bitstring = hash((idex_5,idpx_5,rc_5)) in
+        {240}out(ch, sign(c_5,r1_2,skT_1));
+        {245}get Paiement(=c_5) in
+            {241}insert ValidTickets(c_5);
+            {242}event SessionT(st_3,unlock,idex_5,idpx_5)
+        else
+            {243}insert InvalidTickets(c_5);
+            {244}event SessionT(st_3,unlock,idex_5,idpx_5)
+)
+
+-- Axiom event(SessionD(s_6,p,ide_3,idp_3)) && event(SessionD(s'_2,p',ide_3,idp_3)) ==> s_6 = s'_2 || p ≠ p' encoded as event2(SessionD(s_6,p,ide_3,idp_3),SessionD(s_6,p,ide_3,idp_3)) && event2(SessionD(s'_2,p',ide_3,idp_3),SessionD(s'_2,p',ide_3,idp_3)) ==> s_6 = s'_2 || p ≠ p' in biprocess 1.
+-- Axiom event(SessionV(s_6,p,ide_3,idp_3)) && event(SessionV(s'_2,p',ide_3,idp_3)) ==> s_6 = s'_2 || p ≠ p' encoded as event2(SessionV(s_6,p,ide_3,idp_3),SessionV(s_6,p,ide_3,idp_3)) && event2(SessionV(s'_2,p',ide_3,idp_3),SessionV(s'_2,p',ide_3,idp_3)) ==> s_6 = s'_2 || p ≠ p' in biprocess 1.
+-- Axiom event(SessionT(s_6,p,ide_3,idp_3)) && event(SessionT(s'_2,p',ide_3,idp_3)) ==> s_6 = s'_2 || p ≠ p' encoded as event2(SessionT(s_6,p,ide_3,idp_3),SessionT(s_6,p,ide_3,idp_3)) && event2(SessionT(s'_2,p',ide_3,idp_3),SessionT(s'_2,p',ide_3,idp_3)) ==> s_6 = s'_2 || p ≠ p' in biprocess 1.
+-- Observational equivalence in biprocess 1.
+Translating the process into Horn clauses...
+select attacker2(pk(sk),pk(sk_1))/-5000
+Termination warning: v ≠ v_1 && attacker2(v_2,v) && attacker2(v_2,v_1) -> bad
+Selecting 0
+Termination warning: v ≠ v_1 && attacker2(v,v_2) && attacker2(v_1,v_2) -> bad
+Selecting 0
+Completing...
+Termination warning: v ≠ v_1 && attacker2(v_2,v) && attacker2(v_2,v_1) -> bad
+Selecting 0
+Termination warning: v ≠ v_1 && attacker2(v,v_2) && attacker2(v_1,v_2) -> bad
+Selecting 0
+200 rules inserted. Base: 200 rules (30 with conclusion selected). Queue: 197 rules.
+400 rules inserted. Base: 362 rules (43 with conclusion selected). Queue: 198 rules.
+Termination warning: v ≠ sk && attacker2(sk_1,v) && attacker2(pk(sk_1),pk(sk)) -> bad
+Selecting 1
+Termination warning: v ≠ sk && attacker2(v,sk_1) && attacker2(pk(sk),pk(sk_1)) -> bad
+Selecting 1
+600 rules inserted. Base: 507 rules (54 with conclusion selected). Queue: 176 rules.
+800 rules inserted. Base: 637 rules (68 with conclusion selected). Queue: 242 rules.
+1000 rules inserted. Base: 776 rules (75 with conclusion selected). Queue: 266 rules.
+1200 rules inserted. Base: 882 rules (75 with conclusion selected). Queue: 228 rules.
+1400 rules inserted. Base: 1000 rules (75 with conclusion selected). Queue: 204 rules.
+1600 rules inserted. Base: 1119 rules (79 with conclusion selected). Queue: 162 rules.
+1800 rules inserted. Base: 1233 rules (80 with conclusion selected). Queue: 78 rules.
+2000 rules inserted. Base: 1336 rules (85 with conclusion selected). Queue: 68 rules.
+2200 rules inserted. Base: 1464 rules (91 with conclusion selected). Queue: 39 rules.
+2400 rules inserted. Base: 1577 rules (104 with conclusion selected). Queue: 54 rules.
+ok, secrecy assumption verified: fact unreachable attacker2(chU1[!1 = v],chU1[!1 = v])
+ok, secrecy assumption verified: fact unreachable attacker2(chU2[!1 = v],chU2[!1 = v])
+ok, secrecy assumption verified: fact unreachable attacker2(chU1'[!1 = v],chU1'[!1 = v])
+ok, secrecy assumption verified: fact unreachable attacker2(chU2'[!1 = v],chU2'[!1 = v])
+RESULT Observational equivalence is true.
+
+--------------------------------------------------------------
+Verification summary:
+
+Query(ies):
+ - Observational equivalence is true.
+Associated axiom(s):
+ - Axiom event(SessionD(s_6,p,ide_3,idp_3)) && event(SessionD(s'_2,p',ide_3,idp_3)) ==> s_6 = s'_2 || p ≠ p' encoded as event2(SessionD(s_6,p,ide_3,idp_3),SessionD(s_6,p,ide_3,idp_3)) && event2(SessionD(s'_2,p',ide_3,idp_3),SessionD(s'_2,p',ide_3,idp_3)) ==> s_6 = s'_2 || p ≠ p' in biprocess 1.
+ - Axiom event(SessionV(s_6,p,ide_3,idp_3)) && event(SessionV(s'_2,p',ide_3,idp_3)) ==> s_6 = s'_2 || p ≠ p' encoded as event2(SessionV(s_6,p,ide_3,idp_3),SessionV(s_6,p,ide_3,idp_3)) && event2(SessionV(s'_2,p',ide_3,idp_3),SessionV(s'_2,p',ide_3,idp_3)) ==> s_6 = s'_2 || p ≠ p' in biprocess 1.
+ - Axiom event(SessionT(s_6,p,ide_3,idp_3)) && event(SessionT(s'_2,p',ide_3,idp_3)) ==> s_6 = s'_2 || p ≠ p' encoded as event2(SessionT(s_6,p,ide_3,idp_3),SessionT(s_6,p,ide_3,idp_3)) && event2(SessionT(s'_2,p',ide_3,idp_3),SessionT(s'_2,p',ide_3,idp_3)) ==> s_6 = s'_2 || p ≠ p' in biprocess 1.
+
+--------------------------------------------------------------
+
