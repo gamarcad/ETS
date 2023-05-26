@@ -497,93 +497,195 @@ Process 0 (that is, the initial process):
 -- Axiom event(SessionD(s_4,p,ide_2,idp_2)) && event(SessionD(s'_2,p',ide_2,idp_2)) ==> s_4 = s'_2 || p ≠ p' in process 1.
 -- Axiom event(SessionV(s_4,p,ide_2,idp_2)) && event(SessionV(s'_2,p',ide_2,idp_2)) ==> s_4 = s'_2 || p ≠ p' in process 1.
 -- Axiom event(SessionT(s_4,p,ide_2,idp_2)) && event(SessionT(s'_2,p',ide_2,idp_2)) ==> s_4 = s'_2 || p ≠ p' in process 1.
--- Query event(User1HasValidTicket(ide_2,idp_2,c_5,sigmac_3,pkD_1)) ==> event(User1ReceivesPurchaseResponse(ide_2,idp_2,c_5,sigmac_3,pkD_1)) in process 1.
+-- Query event(TReceiveTransfertRequest(idex_6,idpx_6,rc_5,c_5,pkU1_rt_3,pkU2_rt_3,pkT_1)) ==> event(User2SendTransfertRequest(idex_6,idpx_6,pkU1_rt_3,pkU2_rt_3,pkT_1)) && event(User1SendTransfertRequest(idex_6,idpx_6,rc_5,c_5,pkU1_rt_3,pkU2_rt_3,pkT_1)) in process 1.
 Translating the process into Horn clauses...
 select attacker(pk(sk))/-5000
 Completing...
-200 rules inserted. Base: 178 rules (45 with conclusion selected). Queue: 46 rules.
-400 rules inserted. Base: 264 rules (51 with conclusion selected). Queue: 40 rules.
-600 rules inserted. Base: 344 rules (59 with conclusion selected). Queue: 18 rules.
-Starting query event(User1HasValidTicket(ide_2,idp_2,c_5,sigmac_3,pkD_1)) ==> event(User1ReceivesPurchaseResponse(ide_2,idp_2,c_5,sigmac_3,pkD_1))
-goal reachable: begin(SessionD(st_4,unlock[],ide_2,idp_2)) && begin(User1ReceivesPurchaseResponse(ide_2,idp_2,hash((ide_2,idp_2,rc_5)),sign(hash((ide_2,idp_2,rc_5)),r_5,skD_3),pk(skD_3))) && begin(SessionD(st_4,lock[],ide_2,idp_2)) -> end(User1HasValidTicket(ide_2,idp_2,hash((ide_2,idp_2,rc_5)),sign(hash((ide_2,idp_2,rc_5)),r_5,skD_3),pk(skD_3)))
+200 rules inserted. Base: 174 rules (43 with conclusion selected). Queue: 48 rules.
+400 rules inserted. Base: 264 rules (49 with conclusion selected). Queue: 56 rules.
+600 rules inserted. Base: 341 rules (56 with conclusion selected). Queue: 32 rules.
+Starting query event(TReceiveTransfertRequest(idex_6,idpx_6,rc_5,c_5,pkU1_rt_3,pkU2_rt_3,pkT_1)) ==> event(User2SendTransfertRequest(idex_6,idpx_6,pkU1_rt_3,pkU2_rt_3,pkT_1)) && event(User1SendTransfertRequest(idex_6,idpx_6,rc_5,c_5,pkU1_rt_3,pkU2_rt_3,pkT_1))
+goal reachable: begin(SessionT(st_4,lock[],ide_2,idp_2)) && begin(User1SendTransfertRequest(ide_2,idp_2,rc_5,hash((ide_2,idp_2,rc_5)),pk(randsk(skU1_2,rt_2)),pk(randsk(skU2_2,rt_3)),pk(skT_2))) && begin(User2SendTransfertRequest(ide_2,idp_2,pk(randsk(skU1_2,rt_2)),pk(randsk(skU2_2,rt_3)),pk(skT_2))) && begin(SessionD(st_5,lock[],ide_2,idp_2)) -> end(TReceiveTransfertRequest(ide_2,idp_2,rc_5,hash((ide_2,idp_2,rc_5)),pk(randsk(skU1_2,rt_2)),pk(randsk(skU2_2,rt_3)),pk(skT_2)))
 Abbreviations:
 ide_2 = ide[!1 = @sid]
 idp_2 = idp[!1 = @sid]
 rc_5 = rc[!1 = @sid]
-r_6 = r[!1 = @sid]
+skU1_2 = skU1[!1 = @sid]
+skU2_2 = skU2[!1 = @sid]
+rt_3 = rt_1[!1 = @sid]
+r_5 = r[!1 = @sid]
 skD_3 = skD[!1 = @sid]
-r_5 = r_1[request = aenc((ide_2,idp_2,rc_5),r_6,pk(skD_3)),!2 = @sid_1,!1 = @sid]
-st_4 = st[!2 = @sid_1,!1 = @sid]
-RESULT event(User1HasValidTicket(ide_2,idp_2,c_5,sigmac_3,pkD_1)) ==> event(User1ReceivesPurchaseResponse(ide_2,idp_2,c_5,sigmac_3,pkD_1)) is true.
--- Query event(User1ReceivesPurchaseResponse(ide_2,idp_2,c_5,sigmac_3,pkD_1)) ==> event(DistributorSendsPurchaseResponse(ide_2,idp_2,c_5,sigmac_3,pkD_1)) in process 1.
+r_6 = r_1[request = aenc((ide_2,idp_2,rc_5),r_5,pk(skD_3)),!2 = @sid_1,!1 = @sid]
+rt_2 = rt[pkU2_rt = pk(randsk(skU2_2,rt_3)),sigmac = sign(hash((ide_2,idp_2,rc_5)),r_6,skD_3),!1 = @sid]
+skT_2 = skT[!1 = @sid]
+st_4 = st_3[!2 = @sid_2,!1 = @sid]
+st_5 = st[!2 = @sid_1,!1 = @sid]
+RESULT event(TReceiveTransfertRequest(idex_6,idpx_6,rc_5,c_5,pkU1_rt_3,pkU2_rt_3,pkT_1)) ==> event(User2SendTransfertRequest(idex_6,idpx_6,pkU1_rt_3,pkU2_rt_3,pkT_1)) && event(User1SendTransfertRequest(idex_6,idpx_6,rc_5,c_5,pkU1_rt_3,pkU2_rt_3,pkT_1)) is true.
+-- Query event(User2GetTApprobation(idex_6,idpx_6,pkU1_rt_3,pkU2_rt_3,pkT_1)) ==> event(TSendApprobationU2(idex_6,idpx_6,rcx_3,cx_3,pkU1_rt_3,pkU2_rt_3,pkT_1)) in process 1.
 Translating the process into Horn clauses...
 select attacker(pk(sk))/-5000
 Completing...
-200 rules inserted. Base: 171 rules (44 with conclusion selected). Queue: 46 rules.
-400 rules inserted. Base: 257 rules (50 with conclusion selected). Queue: 40 rules.
-600 rules inserted. Base: 335 rules (58 with conclusion selected). Queue: 16 rules.
-Starting query event(User1ReceivesPurchaseResponse(ide_2,idp_2,c_5,sigmac_3,pkD_1)) ==> event(DistributorSendsPurchaseResponse(ide_2,idp_2,c_5,sigmac_3,pkD_1))
-goal reachable: begin(DistributorSendsPurchaseResponse(ide_2,idp_2,hash((ide_2,idp_2,rc_5)),sign(hash((ide_2,idp_2,rc_5)),r_5,skD_3),pk(skD_3))) && begin(SessionD(st_4,lock[],ide_2,idp_2)) -> end(User1ReceivesPurchaseResponse(ide_2,idp_2,hash((ide_2,idp_2,rc_5)),sign(hash((ide_2,idp_2,rc_5)),r_5,skD_3),pk(skD_3)))
+200 rules inserted. Base: 173 rules (43 with conclusion selected). Queue: 47 rules.
+400 rules inserted. Base: 257 rules (49 with conclusion selected). Queue: 41 rules.
+600 rules inserted. Base: 338 rules (58 with conclusion selected). Queue: 16 rules.
+Starting query event(User2GetTApprobation(idex_6,idpx_6,pkU1_rt_3,pkU2_rt_3,pkT_1)) ==> event(TSendApprobationU2(idex_6,idpx_6,rcx_3,cx_3,pkU1_rt_3,pkU2_rt_3,pkT_1))
+goal reachable: begin(TSendApprobationU2(ide_2,idp_2,rc_5,hash((ide_2,idp_2,rc_5)),pk(randsk(skU1_2,rt_2)),pk(randsk(skU2_2,rt_3)),pk(skT_2))) && begin(SessionT(st_4,lock[],ide_2,idp_2)) && begin(SessionD(st_5,lock[],ide_2,idp_2)) -> end(User2GetTApprobation(ide_2,idp_2,pk(randsk(skU1_2,rt_2)),pk(randsk(skU2_2,rt_3)),pk(skT_2)))
 Abbreviations:
 ide_2 = ide[!1 = @sid]
 idp_2 = idp[!1 = @sid]
+skU1_2 = skU1[!1 = @sid]
+skU2_2 = skU2[!1 = @sid]
+rt_3 = rt_1[!1 = @sid]
 rc_5 = rc[!1 = @sid]
-r_6 = r[!1 = @sid]
+r_5 = r[!1 = @sid]
 skD_3 = skD[!1 = @sid]
-r_5 = r_1[request = aenc((ide_2,idp_2,rc_5),r_6,pk(skD_3)),!2 = @sid_1,!1 = @sid]
-st_4 = st[!2 = @sid_1,!1 = @sid]
-RESULT event(User1ReceivesPurchaseResponse(ide_2,idp_2,c_5,sigmac_3,pkD_1)) ==> event(DistributorSendsPurchaseResponse(ide_2,idp_2,c_5,sigmac_3,pkD_1)) is true.
--- Query inj-event(User1HasValidTicket(ide_2,idp_2,c_5,sigmac_3,pkD_1)) ==> inj-event(User1ReceivesPurchaseResponse(ide_2,idp_2,c_5,sigmac_3,pkD_1)) in process 1.
+r_6 = r_1[request = aenc((ide_2,idp_2,rc_5),r_5,pk(skD_3)),!2 = @sid_1,!1 = @sid]
+rt_2 = rt[pkU2_rt = pk(randsk(skU2_2,rt_3)),sigmac = sign(hash((ide_2,idp_2,rc_5)),r_6,skD_3),!1 = @sid]
+skT_2 = skT[!1 = @sid]
+st_4 = st_3[!2 = @sid_2,!1 = @sid]
+st_5 = st[!2 = @sid_1,!1 = @sid]
+RESULT event(User2GetTApprobation(idex_6,idpx_6,pkU1_rt_3,pkU2_rt_3,pkT_1)) ==> event(TSendApprobationU2(idex_6,idpx_6,rcx_3,cx_3,pkU1_rt_3,pkU2_rt_3,pkT_1)) is true.
+-- Query event(User2ReceivesPurchaseResponse(ide_2,idp_2,c_5,sigmac_3,pkU1_rt_3,pkU2_rt_3,pkT_1)) ==> event(TSendsPurchaseResponse(ide_2,idp_2,cx_3,c_5,sigmac_3,pkU1_rt_3,pkU2_rt_3,pkT_1)) in process 1.
 Translating the process into Horn clauses...
 select attacker(pk(sk))/-5000
 Completing...
-200 rules inserted. Base: 178 rules (45 with conclusion selected). Queue: 46 rules.
-400 rules inserted. Base: 265 rules (51 with conclusion selected). Queue: 40 rules.
-600 rules inserted. Base: 347 rules (59 with conclusion selected). Queue: 18 rules.
-Starting query inj-event(User1HasValidTicket(ide_2,idp_2,c_5,sigmac_3,pkD_1)) ==> inj-event(User1ReceivesPurchaseResponse(ide_2,idp_2,c_5,sigmac_3,pkD_1))
-goal reachable: begin(SessionD(st_4,unlock[],ide_2,idp_2)) && begin(User1ReceivesPurchaseResponse(ide_2,idp_2,hash((ide_2,idp_2,rc_5)),sign(hash((ide_2,idp_2,rc_5)),r_5,skD_3),pk(skD_3)),@occ36_1) && begin(SessionD(st_4,lock[],ide_2,idp_2)) -> end(@occ81_1,User1HasValidTicket(ide_2,idp_2,hash((ide_2,idp_2,rc_5)),sign(hash((ide_2,idp_2,rc_5)),r_5,skD_3),pk(skD_3)))
+200 rules inserted. Base: 174 rules (43 with conclusion selected). Queue: 48 rules.
+400 rules inserted. Base: 275 rules (49 with conclusion selected). Queue: 57 rules.
+600 rules inserted. Base: 346 rules (53 with conclusion selected). Queue: 48 rules.
+800 rules inserted. Base: 438 rules (61 with conclusion selected). Queue: 30 rules.
+Starting query event(User2ReceivesPurchaseResponse(ide_2,idp_2,c_5,sigmac_3,pkU1_rt_3,pkU2_rt_3,pkT_1)) ==> event(TSendsPurchaseResponse(ide_2,idp_2,cx_3,c_5,sigmac_3,pkU1_rt_3,pkU2_rt_3,pkT_1))
+goal reachable: begin(TSendsPurchaseResponse(ide_2,idp_2,hash((ide_2,idp_2,rc_5)),hash((ide_2,idp_2,rcx_3)),sign(hash((ide_2,idp_2,rcx_3)),r1_2,skT_2),pk(randsk(skU1_2,rt_2)),pk(randsk(skU2_2,rt_3)),pk(skT_2))) && begin(SessionT(st_4,lock[],ide_2,idp_2)) && begin(SessionD(st_5,lock[],ide_2,idp_2)) -> end(User2ReceivesPurchaseResponse(ide_2,idp_2,hash((ide_2,idp_2,rcx_3)),sign(hash((ide_2,idp_2,rcx_3)),r1_2,skT_2),pk(randsk(skU1_2,rt_2)),pk(randsk(skU2_2,rt_3)),pk(skT_2)))
+Abbreviations:
+ide_2 = ide[!1 = @sid]
+idp_2 = idp[!1 = @sid]
+skU2_2 = skU2[!1 = @sid]
+rt_3 = rt_1[!1 = @sid]
+skU1_2 = skU1[!1 = @sid]
+rc_5 = rc[!1 = @sid]
+r_5 = r[!1 = @sid]
+skD_3 = skD[!1 = @sid]
+r_6 = r_1[request = aenc((ide_2,idp_2,rc_5),r_5,pk(skD_3)),!2 = @sid_1,!1 = @sid]
+rt_2 = rt[pkU2_rt = pk(randsk(skU2_2,rt_3)),sigmac = sign(hash((ide_2,idp_2,rc_5)),r_6,skD_3),!1 = @sid]
+r2_3 = r2_1[pkU2_rt = pk(randsk(skU2_2,rt_3)),sigmac = sign(hash((ide_2,idp_2,rc_5)),r_6,skD_3),!1 = @sid]
+r3_3 = r3_1[pkU2_rt = pk(randsk(skU2_2,rt_3)),sigmac = sign(hash((ide_2,idp_2,rc_5)),r_6,skD_3),!1 = @sid]
+skT_2 = skT[!1 = @sid]
+r1_3 = r1[pkU1_rt_1 = pk(randsk(skU1_2,rt_2)),idpx_3 = idp_2,idex_3 = ide_2,!1 = @sid]
+r_7 = r_4[requestUser1 = (pk(randsk(skU1_2,rt_2)),sign((pk(randsk(skU2_2,rt_3)),hash((ide_2,idp_2,rc_5)),rc_5),r2_3,randsk(skU1_2,rt_2)),aenc(((ide_2,idp_2,rc_5),sign(hash((ide_2,idp_2,rc_5)),r_6,skD_3)),r3_3,pk(skT_2))),requestUser2 = (pk(randsk(skU2_2,rt_3)),sign((pk(randsk(skU1_2,rt_2)),ide_2,idp_2),r1_3,randsk(skU2_2,rt_3))),!2 = @sid_2,!1 = @sid]
+rcx_3 = rcx[responseT = sign((ide_2,idp_2,pk(randsk(skU2_2,rt_3)),pk(randsk(skU1_2,rt_2))),r_7,skT_2),pkU1_rt_1 = pk(randsk(skU1_2,rt_2)),idpx_3 = idp_2,idex_3 = ide_2,!1 = @sid]
+r2_4 = r2_2[responseT = sign((ide_2,idp_2,pk(randsk(skU2_2,rt_3)),pk(randsk(skU1_2,rt_2))),r_7,skT_2),pkU1_rt_1 = pk(randsk(skU1_2,rt_2)),idpx_3 = idp_2,idex_3 = ide_2,!1 = @sid]
+r1_2 = r1_1[request_1 = aenc((ide_2,idp_2,rcx_3),r2_4,pk(skT_2)),requestUser1 = (pk(randsk(skU1_2,rt_2)),sign((pk(randsk(skU2_2,rt_3)),hash((ide_2,idp_2,rc_5)),rc_5),r2_3,randsk(skU1_2,rt_2)),aenc(((ide_2,idp_2,rc_5),sign(hash((ide_2,idp_2,rc_5)),r_6,skD_3)),r3_3,pk(skT_2))),requestUser2 = (pk(randsk(skU2_2,rt_3)),sign((pk(randsk(skU1_2,rt_2)),ide_2,idp_2),r1_3,randsk(skU2_2,rt_3))),!2 = @sid_2,!1 = @sid]
+st_4 = st_3[!2 = @sid_2,!1 = @sid]
+st_5 = st[!2 = @sid_1,!1 = @sid]
+RESULT event(User2ReceivesPurchaseResponse(ide_2,idp_2,c_5,sigmac_3,pkU1_rt_3,pkU2_rt_3,pkT_1)) ==> event(TSendsPurchaseResponse(ide_2,idp_2,cx_3,c_5,sigmac_3,pkU1_rt_3,pkU2_rt_3,pkT_1)) is true.
+-- Query inj-event(TReceiveTransfertRequest(idex_6,idpx_6,rc_5,c_5,pkU1_rt_3,pkU2_rt_3,pkT_1)) ==> inj-event(User2SendTransfertRequest(idex_6,idpx_6,pkU1_rt_3,pkU2_rt_3,pkT_1)) && inj-event(User1SendTransfertRequest(idex_6,idpx_6,rc_5,c_5,pkU1_rt_3,pkU2_rt_3,pkT_1)) in process 1.
+Translating the process into Horn clauses...
+select attacker(pk(sk))/-5000
+Completing...
+200 rules inserted. Base: 173 rules (43 with conclusion selected). Queue: 49 rules.
+400 rules inserted. Base: 260 rules (48 with conclusion selected). Queue: 65 rules.
+600 rules inserted. Base: 337 rules (54 with conclusion selected). Queue: 41 rules.
+800 rules inserted. Base: 439 rules (65 with conclusion selected). Queue: 3 rules.
+Starting query inj-event(TReceiveTransfertRequest(idex_6,idpx_6,rc_5,c_5,pkU1_rt_3,pkU2_rt_3,pkT_1)) ==> inj-event(User2SendTransfertRequest(idex_6,idpx_6,pkU1_rt_3,pkU2_rt_3,pkT_1)) && inj-event(User1SendTransfertRequest(idex_6,idpx_6,rc_5,c_5,pkU1_rt_3,pkU2_rt_3,pkT_1))
+goal reachable: begin(SessionT(st_4,lock[],ide_2,idp_2)) && begin(User1SendTransfertRequest(ide_2,idp_2,rc_5,hash((ide_2,idp_2,rc_5)),pk(randsk(skU1_2,rt_2)),pk(randsk(skU2_2,rt_3)),pk(skT_2)),@occ61_1) && begin(User2SendTransfertRequest(ide_2,idp_2,pk(randsk(skU1_2,rt_2)),pk(randsk(skU2_2,rt_3)),pk(skT_2)),@occ147_1) && begin(SessionD(st_5,lock[],ide_2,idp_2)) -> end(@occ187_1,TReceiveTransfertRequest(ide_2,idp_2,rc_5,hash((ide_2,idp_2,rc_5)),pk(randsk(skU1_2,rt_2)),pk(randsk(skU2_2,rt_3)),pk(skT_2)))
+The 1st, 2nd, 3rd, 4th hypotheses occur strictly before the conclusion.
+Abbreviations:
+skU1_2 = skU1[!1 = @sid]
+skU2_2 = skU2[!1 = @sid]
+rt_3 = rt_1[!1 = @sid]
+ide_2 = ide[!1 = @sid]
+idp_2 = idp[!1 = @sid]
+rc_5 = rc[!1 = @sid]
+r_5 = r[!1 = @sid]
+skD_3 = skD[!1 = @sid]
+r_6 = r_1[request = aenc((ide_2,idp_2,rc_5),r_5,pk(skD_3)),!2 = @sid_1,!1 = @sid]
+rt_2 = rt[pkU2_rt = pk(randsk(skU2_2,rt_3)),sigmac = sign(hash((ide_2,idp_2,rc_5)),r_6,skD_3),!1 = @sid]
+r2_3 = r2_1[pkU2_rt = pk(randsk(skU2_2,rt_3)),sigmac = sign(hash((ide_2,idp_2,rc_5)),r_6,skD_3),!1 = @sid]
+r3_3 = r3_1[pkU2_rt = pk(randsk(skU2_2,rt_3)),sigmac = sign(hash((ide_2,idp_2,rc_5)),r_6,skD_3),!1 = @sid]
+skT_2 = skT[!1 = @sid]
+r1_2 = r1[pkU1_rt_1 = pk(randsk(skU1_2,rt_2)),idpx_3 = idp_2,idex_3 = ide_2,!1 = @sid]
+@occ187_1 = @occ187[requestUser1 = (pk(randsk(skU1_2,rt_2)),sign((pk(randsk(skU2_2,rt_3)),hash((ide_2,idp_2,rc_5)),rc_5),r2_3,randsk(skU1_2,rt_2)),aenc(((ide_2,idp_2,rc_5),sign(hash((ide_2,idp_2,rc_5)),r_6,skD_3)),r3_3,pk(skT_2))),requestUser2 = (pk(randsk(skU2_2,rt_3)),sign((pk(randsk(skU1_2,rt_2)),ide_2,idp_2),r1_2,randsk(skU2_2,rt_3))),!2 = @sid_2,!1 = @sid]
+st_4 = st_3[!2 = @sid_2,!1 = @sid]
+@occ61_1 = @occ61[pkU2_rt = pk(randsk(skU2_2,rt_3)),sigmac = sign(hash((ide_2,idp_2,rc_5)),r_6,skD_3),!1 = @sid]
+@occ147_1 = @occ147[pkU1_rt_1 = pk(randsk(skU1_2,rt_2)),idpx_3 = idp_2,idex_3 = ide_2,!1 = @sid]
+st_5 = st[!2 = @sid_1,!1 = @sid]
+RESULT inj-event(TReceiveTransfertRequest(idex_6,idpx_6,rc_5,c_5,pkU1_rt_3,pkU2_rt_3,pkT_1)) ==> inj-event(User2SendTransfertRequest(idex_6,idpx_6,pkU1_rt_3,pkU2_rt_3,pkT_1)) && inj-event(User1SendTransfertRequest(idex_6,idpx_6,rc_5,c_5,pkU1_rt_3,pkU2_rt_3,pkT_1)) is true.
+-- Query inj-event(User2GetTApprobation(idex_6,idpx_6,pkU1_rt_3,pkU2_rt_3,pkT_1)) ==> inj-event(TSendApprobationU2(idex_6,idpx_6,rcx_3,cx_3,pkU1_rt_3,pkU2_rt_3,pkT_1)) in process 1.
+Translating the process into Horn clauses...
+select attacker(pk(sk))/-5000
+Completing...
+200 rules inserted. Base: 173 rules (43 with conclusion selected). Queue: 47 rules.
+400 rules inserted. Base: 272 rules (49 with conclusion selected). Queue: 59 rules.
+600 rules inserted. Base: 345 rules (54 with conclusion selected). Queue: 42 rules.
+Starting query inj-event(User2GetTApprobation(idex_6,idpx_6,pkU1_rt_3,pkU2_rt_3,pkT_1)) ==> inj-event(TSendApprobationU2(idex_6,idpx_6,rcx_3,cx_3,pkU1_rt_3,pkU2_rt_3,pkT_1))
+goal reachable: begin(TSendApprobationU2(ide_2,idp_2,rc_5,hash((ide_2,idp_2,rc_5)),pk(randsk(skU1_2,rt_2)),pk(randsk(skU2_2,rt_3)),pk(skT_2)),@occ188_1) && begin(SessionT(st_4,lock[],ide_2,idp_2)) && begin(SessionD(st_5,lock[],ide_2,idp_2)) -> end(@occ151_1,User2GetTApprobation(ide_2,idp_2,pk(randsk(skU1_2,rt_2)),pk(randsk(skU2_2,rt_3)),pk(skT_2)))
 The 1st, 2nd, 3rd hypotheses occur strictly before the conclusion.
 Abbreviations:
 ide_2 = ide[!1 = @sid]
 idp_2 = idp[!1 = @sid]
+skU2_2 = skU2[!1 = @sid]
+rt_3 = rt_1[!1 = @sid]
+skU1_2 = skU1[!1 = @sid]
 rc_5 = rc[!1 = @sid]
-r_6 = r[!1 = @sid]
+r_5 = r[!1 = @sid]
 skD_3 = skD[!1 = @sid]
-@occ81_1 = @occ81[request = aenc((ide_2,idp_2,rc_5),r_6,pk(skD_3)),!2 = @sid_1,!1 = @sid]
-r_5 = r_1[request = aenc((ide_2,idp_2,rc_5),r_6,pk(skD_3)),!2 = @sid_1,!1 = @sid]
-st_4 = st[!2 = @sid_1,!1 = @sid]
-@occ36_1 = @occ36[sigmac = sign(hash((ide_2,idp_2,rc_5)),r_5,skD_3),!1 = @sid]
-RESULT inj-event(User1HasValidTicket(ide_2,idp_2,c_5,sigmac_3,pkD_1)) ==> inj-event(User1ReceivesPurchaseResponse(ide_2,idp_2,c_5,sigmac_3,pkD_1)) is true.
--- Query inj-event(User1ReceivesPurchaseResponse(ide_2,idp_2,c_5,sigmac_3,pkD_1)) ==> inj-event(DistributorSendsPurchaseResponse(ide_2,idp_2,c_5,sigmac_3,pkD_1)) in process 1.
+r_6 = r_1[request = aenc((ide_2,idp_2,rc_5),r_5,pk(skD_3)),!2 = @sid_1,!1 = @sid]
+rt_2 = rt[pkU2_rt = pk(randsk(skU2_2,rt_3)),sigmac = sign(hash((ide_2,idp_2,rc_5)),r_6,skD_3),!1 = @sid]
+r2_3 = r2_1[pkU2_rt = pk(randsk(skU2_2,rt_3)),sigmac = sign(hash((ide_2,idp_2,rc_5)),r_6,skD_3),!1 = @sid]
+r3_3 = r3_1[pkU2_rt = pk(randsk(skU2_2,rt_3)),sigmac = sign(hash((ide_2,idp_2,rc_5)),r_6,skD_3),!1 = @sid]
+skT_2 = skT[!1 = @sid]
+r1_2 = r1[pkU1_rt_1 = pk(randsk(skU1_2,rt_2)),idpx_3 = idp_2,idex_3 = ide_2,!1 = @sid]
+r_7 = r_4[requestUser1 = (pk(randsk(skU1_2,rt_2)),sign((pk(randsk(skU2_2,rt_3)),hash((ide_2,idp_2,rc_5)),rc_5),r2_3,randsk(skU1_2,rt_2)),aenc(((ide_2,idp_2,rc_5),sign(hash((ide_2,idp_2,rc_5)),r_6,skD_3)),r3_3,pk(skT_2))),requestUser2 = (pk(randsk(skU2_2,rt_3)),sign((pk(randsk(skU1_2,rt_2)),ide_2,idp_2),r1_2,randsk(skU2_2,rt_3))),!2 = @sid_2,!1 = @sid]
+@occ151_1 = @occ151[responseT = sign((ide_2,idp_2,pk(randsk(skU2_2,rt_3)),pk(randsk(skU1_2,rt_2))),r_7,skT_2),pkU1_rt_1 = pk(randsk(skU1_2,rt_2)),idpx_3 = idp_2,idex_3 = ide_2,!1 = @sid]
+@occ188_1 = @occ188[requestUser1 = (pk(randsk(skU1_2,rt_2)),sign((pk(randsk(skU2_2,rt_3)),hash((ide_2,idp_2,rc_5)),rc_5),r2_3,randsk(skU1_2,rt_2)),aenc(((ide_2,idp_2,rc_5),sign(hash((ide_2,idp_2,rc_5)),r_6,skD_3)),r3_3,pk(skT_2))),requestUser2 = (pk(randsk(skU2_2,rt_3)),sign((pk(randsk(skU1_2,rt_2)),ide_2,idp_2),r1_2,randsk(skU2_2,rt_3))),!2 = @sid_2,!1 = @sid]
+st_4 = st_3[!2 = @sid_2,!1 = @sid]
+st_5 = st[!2 = @sid_1,!1 = @sid]
+RESULT inj-event(User2GetTApprobation(idex_6,idpx_6,pkU1_rt_3,pkU2_rt_3,pkT_1)) ==> inj-event(TSendApprobationU2(idex_6,idpx_6,rcx_3,cx_3,pkU1_rt_3,pkU2_rt_3,pkT_1)) is true.
+-- Query inj-event(User2ReceivesPurchaseResponse(ide_2,idp_2,c_5,sigmac_3,pkU1_rt_3,pkU2_rt_3,pkT_1)) ==> inj-event(TSendsPurchaseResponse(ide_2,idp_2,cx_3,c_5,sigmac_3,pkU1_rt_3,pkU2_rt_3,pkT_1)) in process 1.
 Translating the process into Horn clauses...
 select attacker(pk(sk))/-5000
 Completing...
-200 rules inserted. Base: 179 rules (45 with conclusion selected). Queue: 46 rules.
-400 rules inserted. Base: 283 rules (51 with conclusion selected). Queue: 41 rules.
-600 rules inserted. Base: 369 rules (59 with conclusion selected). Queue: 17 rules.
-Starting query inj-event(User1ReceivesPurchaseResponse(ide_2,idp_2,c_5,sigmac_3,pkD_1)) ==> inj-event(DistributorSendsPurchaseResponse(ide_2,idp_2,c_5,sigmac_3,pkD_1))
-goal reachable: begin(DistributorSendsPurchaseResponse(ide_2,idp_2,hash((ide_2,idp_2,rc_5)),sign(hash((ide_2,idp_2,rc_5)),r_5,skD_3),pk(skD_3)),@occ76_1) && begin(SessionD(st_4,lock[],ide_2,idp_2)) -> end(@occ36_2,User1ReceivesPurchaseResponse(ide_2,idp_2,hash((ide_2,idp_2,rc_5)),sign(hash((ide_2,idp_2,rc_5)),r_5,skD_3),pk(skD_3)))
-The 1st, 2nd hypotheses occur strictly before the conclusion.
+200 rules inserted. Base: 174 rules (43 with conclusion selected). Queue: 48 rules.
+400 rules inserted. Base: 275 rules (49 with conclusion selected). Queue: 57 rules.
+600 rules inserted. Base: 346 rules (53 with conclusion selected). Queue: 48 rules.
+800 rules inserted. Base: 438 rules (61 with conclusion selected). Queue: 30 rules.
+Starting query inj-event(User2ReceivesPurchaseResponse(ide_2,idp_2,c_5,sigmac_3,pkU1_rt_3,pkU2_rt_3,pkT_1)) ==> inj-event(TSendsPurchaseResponse(ide_2,idp_2,cx_3,c_5,sigmac_3,pkU1_rt_3,pkU2_rt_3,pkT_1))
+goal reachable: begin(TSendsPurchaseResponse(ide_2,idp_2,hash((ide_2,idp_2,rc_5)),hash((ide_2,idp_2,rcx_3)),sign(hash((ide_2,idp_2,rcx_3)),r1_2,skT_2),pk(randsk(skU1_2,rt_2)),pk(randsk(skU2_2,rt_3)),pk(skT_2)),@occ196_1) && begin(SessionT(st_4,lock[],ide_2,idp_2)) && begin(SessionD(st_5,lock[],ide_2,idp_2)) -> end(@occ160_1,User2ReceivesPurchaseResponse(ide_2,idp_2,hash((ide_2,idp_2,rcx_3)),sign(hash((ide_2,idp_2,rcx_3)),r1_2,skT_2),pk(randsk(skU1_2,rt_2)),pk(randsk(skU2_2,rt_3)),pk(skT_2)))
+The 1st, 2nd, 3rd hypotheses occur strictly before the conclusion.
 Abbreviations:
 ide_2 = ide[!1 = @sid]
 idp_2 = idp[!1 = @sid]
+skU2_2 = skU2[!1 = @sid]
+rt_3 = rt_1[!1 = @sid]
+skU1_2 = skU1[!1 = @sid]
 rc_5 = rc[!1 = @sid]
-r_6 = r[!1 = @sid]
+r_5 = r[!1 = @sid]
 skD_3 = skD[!1 = @sid]
-r_5 = r_1[request = aenc((ide_2,idp_2,rc_5),r_6,pk(skD_3)),!2 = @sid_1,!1 = @sid]
-@occ36_2 = @occ36_1[sigmac = sign(hash((ide_2,idp_2,rc_5)),r_5,skD_3),!1 = @sid]
-@occ76_1 = @occ76[request = aenc((ide_2,idp_2,rc_5),r_6,pk(skD_3)),!2 = @sid_1,!1 = @sid]
-st_4 = st[!2 = @sid_1,!1 = @sid]
-RESULT inj-event(User1ReceivesPurchaseResponse(ide_2,idp_2,c_5,sigmac_3,pkD_1)) ==> inj-event(DistributorSendsPurchaseResponse(ide_2,idp_2,c_5,sigmac_3,pkD_1)) is true.
+r_6 = r_1[request = aenc((ide_2,idp_2,rc_5),r_5,pk(skD_3)),!2 = @sid_1,!1 = @sid]
+rt_2 = rt[pkU2_rt = pk(randsk(skU2_2,rt_3)),sigmac = sign(hash((ide_2,idp_2,rc_5)),r_6,skD_3),!1 = @sid]
+r2_3 = r2_1[pkU2_rt = pk(randsk(skU2_2,rt_3)),sigmac = sign(hash((ide_2,idp_2,rc_5)),r_6,skD_3),!1 = @sid]
+r3_3 = r3_1[pkU2_rt = pk(randsk(skU2_2,rt_3)),sigmac = sign(hash((ide_2,idp_2,rc_5)),r_6,skD_3),!1 = @sid]
+skT_2 = skT[!1 = @sid]
+r1_3 = r1[pkU1_rt_1 = pk(randsk(skU1_2,rt_2)),idpx_3 = idp_2,idex_3 = ide_2,!1 = @sid]
+r_7 = r_4[requestUser1 = (pk(randsk(skU1_2,rt_2)),sign((pk(randsk(skU2_2,rt_3)),hash((ide_2,idp_2,rc_5)),rc_5),r2_3,randsk(skU1_2,rt_2)),aenc(((ide_2,idp_2,rc_5),sign(hash((ide_2,idp_2,rc_5)),r_6,skD_3)),r3_3,pk(skT_2))),requestUser2 = (pk(randsk(skU2_2,rt_3)),sign((pk(randsk(skU1_2,rt_2)),ide_2,idp_2),r1_3,randsk(skU2_2,rt_3))),!2 = @sid_2,!1 = @sid]
+rcx_3 = rcx[responseT = sign((ide_2,idp_2,pk(randsk(skU2_2,rt_3)),pk(randsk(skU1_2,rt_2))),r_7,skT_2),pkU1_rt_1 = pk(randsk(skU1_2,rt_2)),idpx_3 = idp_2,idex_3 = ide_2,!1 = @sid]
+r2_4 = r2_2[responseT = sign((ide_2,idp_2,pk(randsk(skU2_2,rt_3)),pk(randsk(skU1_2,rt_2))),r_7,skT_2),pkU1_rt_1 = pk(randsk(skU1_2,rt_2)),idpx_3 = idp_2,idex_3 = ide_2,!1 = @sid]
+r1_2 = r1_1[request_1 = aenc((ide_2,idp_2,rcx_3),r2_4,pk(skT_2)),requestUser1 = (pk(randsk(skU1_2,rt_2)),sign((pk(randsk(skU2_2,rt_3)),hash((ide_2,idp_2,rc_5)),rc_5),r2_3,randsk(skU1_2,rt_2)),aenc(((ide_2,idp_2,rc_5),sign(hash((ide_2,idp_2,rc_5)),r_6,skD_3)),r3_3,pk(skT_2))),requestUser2 = (pk(randsk(skU2_2,rt_3)),sign((pk(randsk(skU1_2,rt_2)),ide_2,idp_2),r1_3,randsk(skU2_2,rt_3))),!2 = @sid_2,!1 = @sid]
+@occ160_1 = @occ160[sigmacx = sign(hash((ide_2,idp_2,rcx_3)),r1_2,skT_2),responseT = sign((ide_2,idp_2,pk(randsk(skU2_2,rt_3)),pk(randsk(skU1_2,rt_2))),r_7,skT_2),pkU1_rt_1 = pk(randsk(skU1_2,rt_2)),idpx_3 = idp_2,idex_3 = ide_2,!1 = @sid]
+@occ196_1 = @occ196[request_1 = aenc((ide_2,idp_2,rcx_3),r2_4,pk(skT_2)),requestUser1 = (pk(randsk(skU1_2,rt_2)),sign((pk(randsk(skU2_2,rt_3)),hash((ide_2,idp_2,rc_5)),rc_5),r2_3,randsk(skU1_2,rt_2)),aenc(((ide_2,idp_2,rc_5),sign(hash((ide_2,idp_2,rc_5)),r_6,skD_3)),r3_3,pk(skT_2))),requestUser2 = (pk(randsk(skU2_2,rt_3)),sign((pk(randsk(skU1_2,rt_2)),ide_2,idp_2),r1_3,randsk(skU2_2,rt_3))),!2 = @sid_2,!1 = @sid]
+st_4 = st_3[!2 = @sid_2,!1 = @sid]
+st_5 = st[!2 = @sid_1,!1 = @sid]
+RESULT inj-event(User2ReceivesPurchaseResponse(ide_2,idp_2,c_5,sigmac_3,pkU1_rt_3,pkU2_rt_3,pkT_1)) ==> inj-event(TSendsPurchaseResponse(ide_2,idp_2,cx_3,c_5,sigmac_3,pkU1_rt_3,pkU2_rt_3,pkT_1)) is true.
 
 --------------------------------------------------------------
 Verification summary:
 
 Query(ies):
- - Query event(User1HasValidTicket(ide_2,idp_2,c_5,sigmac_3,pkD_1)) ==> event(User1ReceivesPurchaseResponse(ide_2,idp_2,c_5,sigmac_3,pkD_1)) is true.
- - Query event(User1ReceivesPurchaseResponse(ide_2,idp_2,c_5,sigmac_3,pkD_1)) ==> event(DistributorSendsPurchaseResponse(ide_2,idp_2,c_5,sigmac_3,pkD_1)) is true.
- - Query inj-event(User1HasValidTicket(ide_2,idp_2,c_5,sigmac_3,pkD_1)) ==> inj-event(User1ReceivesPurchaseResponse(ide_2,idp_2,c_5,sigmac_3,pkD_1)) is true.
- - Query inj-event(User1ReceivesPurchaseResponse(ide_2,idp_2,c_5,sigmac_3,pkD_1)) ==> inj-event(DistributorSendsPurchaseResponse(ide_2,idp_2,c_5,sigmac_3,pkD_1)) is true.
+ - Query event(TReceiveTransfertRequest(idex_6,idpx_6,rc_5,c_5,pkU1_rt_3,pkU2_rt_3,pkT_1)) ==> event(User2SendTransfertRequest(idex_6,idpx_6,pkU1_rt_3,pkU2_rt_3,pkT_1)) && event(User1SendTransfertRequest(idex_6,idpx_6,rc_5,c_5,pkU1_rt_3,pkU2_rt_3,pkT_1)) is true.
+ - Query event(User2GetTApprobation(idex_6,idpx_6,pkU1_rt_3,pkU2_rt_3,pkT_1)) ==> event(TSendApprobationU2(idex_6,idpx_6,rcx_3,cx_3,pkU1_rt_3,pkU2_rt_3,pkT_1)) is true.
+ - Query event(User2ReceivesPurchaseResponse(ide_2,idp_2,c_5,sigmac_3,pkU1_rt_3,pkU2_rt_3,pkT_1)) ==> event(TSendsPurchaseResponse(ide_2,idp_2,cx_3,c_5,sigmac_3,pkU1_rt_3,pkU2_rt_3,pkT_1)) is true.
+ - Query inj-event(TReceiveTransfertRequest(idex_6,idpx_6,rc_5,c_5,pkU1_rt_3,pkU2_rt_3,pkT_1)) ==> inj-event(User2SendTransfertRequest(idex_6,idpx_6,pkU1_rt_3,pkU2_rt_3,pkT_1)) && inj-event(User1SendTransfertRequest(idex_6,idpx_6,rc_5,c_5,pkU1_rt_3,pkU2_rt_3,pkT_1)) is true.
+ - Query inj-event(User2GetTApprobation(idex_6,idpx_6,pkU1_rt_3,pkU2_rt_3,pkT_1)) ==> inj-event(TSendApprobationU2(idex_6,idpx_6,rcx_3,cx_3,pkU1_rt_3,pkU2_rt_3,pkT_1)) is true.
+ - Query inj-event(User2ReceivesPurchaseResponse(ide_2,idp_2,c_5,sigmac_3,pkU1_rt_3,pkU2_rt_3,pkT_1)) ==> inj-event(TSendsPurchaseResponse(ide_2,idp_2,cx_3,c_5,sigmac_3,pkU1_rt_3,pkU2_rt_3,pkT_1)) is true.
 Associated axiom(s):
  - Axiom event(SessionD(s_4,p,ide_2,idp_2)) && event(SessionD(s'_2,p',ide_2,idp_2)) ==> s_4 = s'_2 || p ≠ p' in process 1.
  - Axiom event(SessionV(s_4,p,ide_2,idp_2)) && event(SessionV(s'_2,p',ide_2,idp_2)) ==> s_4 = s'_2 || p ≠ p' in process 1.

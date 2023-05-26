@@ -86,19 +86,30 @@ axiom s: stamp, s': stamp, p: bitstring, p': bitstring, ide: bitstring, idp: bit
   event(SessionT(s, p, ide, idp)) && event(SessionT(s', p', ide, idp)) ==> (s=s') || (p<>p').
 
 (******** Authentication Properties *******************)
-(********** User and D**********)
+(********** Users and Transferor ****************)
+query idex: bitstring, idpx: bitstring, rc: rand, c: bitstring, pkU1_rt: pkey, pkU2_rt: pkey, pkT: pkey;
+ event(TReceiveTransfertRequest(idex, idpx, rc, c, pkU1_rt, pkU2_rt, pkT)) ==>  (event(User2SendTransfertRequest(idex, idpx, pkU1_rt, pkU2_rt, pkT)) &&
+  event(User1SendTransfertRequest(idex, idpx, rc, c, pkU1_rt, pkU2_rt, pkT))).
 
-query ide: bitstring, idp: bitstring, c: bitstring, sigmac: bitstring, pkD: pkey;
-  event(User1HasValidTicket(ide, idp, c, sigmac, pkD)) ==> event(User1ReceivesPurchaseResponse(ide, idp, c, sigmac, pkD)).
-query ide: bitstring, idp: bitstring, c: bitstring, sigmac: bitstring, pkD: pkey;
-  event(User1ReceivesPurchaseResponse(ide, idp, c, sigmac, pkD)) ==> event(DistributorSendsPurchaseResponse(ide, idp, c, sigmac, pkD)).
+query idex: bitstring, idpx: bitstring, pkU1_rt: pkey, pkU2_rt: pkey, pkT: pkey, rcx: rand, cx: bitstring;
+ event(User2GetTApprobation(idex, idpx, pkU1_rt, pkU2_rt, pkT)) ==> event(TSendApprobationU2(idex, idpx, rcx, cx, pkU1_rt, pkU2_rt, pkT)).
 
-(** Injective Properties To guarentee uniqueness of parameters **)
-query ide: bitstring, idp: bitstring, c: bitstring, sigmac: bitstring, pkD: pkey;
-  inj-event(User1HasValidTicket(ide, idp, c, sigmac, pkD)) ==> inj-event(User1ReceivesPurchaseResponse(ide, idp, c, sigmac, pkD)).
-query ide: bitstring, idp: bitstring, c: bitstring, sigmac: bitstring, pkD: pkey;
-  inj-event(User1ReceivesPurchaseResponse(ide, idp, c, sigmac, pkD)) ==> inj-event(DistributorSendsPurchaseResponse(ide, idp, c, sigmac, pkD)).
+query ide: bitstring, idp: bitstring, cx: bitstring, c: bitstring, pkU1_rt: pkey, pkU2_rt: pkey, sigmac: bitstring, pkT: pkey;
+  event(User2ReceivesPurchaseResponse(ide, idp, c, sigmac, pkU1_rt, pkU2_rt, pkT)) ==>
+  event(TSendsPurchaseResponse(ide, idp, cx, c, sigmac, pkU1_rt, pkU2_rt, pkT)).
 
+(********** Injective properties *************)
+
+query idex: bitstring, idpx: bitstring, rc: rand, c: bitstring, pkU1_rt: pkey, pkU2_rt: pkey, pkT: pkey;
+  inj-event(TReceiveTransfertRequest(idex, idpx, rc, c, pkU1_rt, pkU2_rt, pkT)) ==>  (inj-event(User2SendTransfertRequest(idex, idpx, pkU1_rt, pkU2_rt, pkT)) &&
+    inj-event(User1SendTransfertRequest(idex, idpx, rc, c, pkU1_rt, pkU2_rt, pkT))).
+
+query idex: bitstring, idpx: bitstring, pkU1_rt: pkey, pkU2_rt: pkey, pkT: pkey, rcx: rand, cx: bitstring;
+  inj-event(User2GetTApprobation(idex, idpx, pkU1_rt, pkU2_rt, pkT)) ==> inj-event(TSendApprobationU2(idex, idpx, rcx, cx, pkU1_rt, pkU2_rt, pkT)).
+
+query ide: bitstring, idp: bitstring, cx: bitstring, c: bitstring, pkU1_rt: pkey, pkU2_rt: pkey, sigmac: bitstring, pkT: pkey;
+  inj-event(User2ReceivesPurchaseResponse(ide, idp, c, sigmac, pkU1_rt, pkU2_rt, pkT)) ==>
+  inj-event(TSendsPurchaseResponse(ide, idp, cx, c, sigmac, pkU1_rt, pkU2_rt, pkT)).
 
 
 let User1(skU1: skey, ide: bitstring, idp: bitstring, pkD: pkey, pkT: pkey, pkV: pkey, chU1: channel, chU2: channel) =
