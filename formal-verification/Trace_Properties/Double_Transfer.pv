@@ -1,0 +1,356 @@
+free ch: channel.
+free chp: channel [private].
+
+free lock: bitstring [private].
+free unlock: bitstring [private].
+
+(* Types Declaration *)
+type skey.
+type pkey.
+type rand.
+type stamp.
+
+(* Functions Declarations *)
+fun aenc(bitstring,rand,pkey):bitstring.
+fun hash(bitstring):bitstring.
+fun pk(skey):pkey.
+fun randsign(bitstring,rand):bitstring.
+fun randsk(skey,rand):skey.
+fun sign(bitstring,rand,skey):bitstring.
+
+(* Equational Theory *)
+reduc forall m:bitstring,r:rand,sk:skey;
+  adec(aenc(m,r,pk(sk)),sk) = m.
+
+reduc forall sk: skey, r: rand;
+  randpk(pk(sk), r) = pk(randsk(sk, r)).
+
+reduc forall m:bitstring,r:rand,sk:skey;
+  checksign(sign(m,r,sk),m,pk(sk)) = m.
+
+
+(* Tables delarations *)
+table Paiement(bitstring).
+table ValidTickets(bitstring).
+table Places(bitstring, bitstring).
+table PlacesValidated(bitstring, bitstring).
+table InvalidTickets(bitstring).
+table RefundPaiement(bitstring).
+
+(* Events Declarations *)
+event User1SendPurchaseRequest(bitstring, bitstring, bitstring, rand, pkey).
+event DistributorReceivesPurchaseRequest(bitstring, bitstring, bitstring, rand, pkey).
+event DistributorSendsPurchaseResponse(bitstring, bitstring, bitstring, bitstring, pkey).
+event User1ReceivesPurchaseResponse(bitstring, bitstring, bitstring, bitstring, pkey).
+event User1HasValidTicket(bitstring, bitstring, bitstring, bitstring, pkey).
+
+event User1SendValidationRequest(bitstring, bitstring, rand, bitstring, pkey, pkey).
+event ValidatorReceivesValidTicket(bitstring, bitstring, rand, bitstring, pkey, pkey).
+event ValidatorSendsEncryptedRes(bitstring, bitstring, rand, bitstring, pkey, pkey, bitstring).
+event User1ReceivesValidationResponse(bitstring, bitstring, rand, bitstring, pkey, pkey, bitstring).
+event User1SendValidationResponseConfirmation(bitstring, bitstring, rand, bitstring, pkey, pkey, bitstring).
+event TicketIsValidated(bitstring, bitstring, rand, bitstring, pkey, pkey, bitstring).
+
+event User1SendTransfertRequest(bitstring, bitstring, rand, bitstring, pkey, pkey, pkey).
+event User2SendTransfertRequest(bitstring, bitstring, pkey, pkey, pkey).
+event TReceiveTransfertRequest(bitstring, bitstring, rand, bitstring, pkey, pkey, pkey).
+event TSendApprobationU2(bitstring, bitstring, rand, bitstring, pkey, pkey, pkey).
+event User2GetTApprobation(bitstring, bitstring, pkey, pkey, pkey).
+
+event User2SendPurchaseRequest(bitstring, bitstring, bitstring, pkey, pkey, pkey).
+event TReceivesPurchaseRequest(bitstring, bitstring, bitstring, bitstring, pkey, pkey, pkey).
+event TSendsPurchaseResponse(bitstring, bitstring ,bitstring, bitstring, bitstring, pkey, pkey, pkey).
+event User2ReceivesPurchaseResponse(bitstring, bitstring, bitstring, bitstring, pkey, pkey, pkey).
+event User2HasValidTicket(bitstring, bitstring, bitstring, bitstring, pkey, pkey).
+
+event User2SendValidationRequest(bitstring, bitstring, rand, bitstring, pkey, pkey).
+event User2ReceivesValidationResponse(bitstring, bitstring, rand, bitstring, pkey, pkey, bitstring).
+event User2SendValidationResponseConfirmation(bitstring, bitstring, rand, bitstring, pkey, pkey, bitstring).
+
+event UserIsRefund(bitstring, bitstring, bitstring, pkey).
+event User1HasBeenRefund(bitstring, bitstring, bitstring, pkey).
+
+
+(** Events for tests and sessions ***)
+event SessionD(stamp, bitstring,bitstring, bitstring).
+event SessionV(stamp, bitstring, bitstring, bitstring).
+event SessionT(stamp, bitstring, bitstring, bitstring).
+
+(****** Axiom Declarations ******)
+
+axiom s: stamp, s': stamp, p: bitstring, p': bitstring, ide: bitstring, idp: bitstring;
+  event(SessionD(s, p, ide, idp)) && event(SessionD(s', p', ide, idp)) ==> (s=s') || (p<>p').
+axiom s: stamp, s': stamp, p: bitstring, p': bitstring, ide: bitstring, idp: bitstring;
+  event(SessionV(s, p, ide, idp)) && event(SessionV(s', p', ide, idp)) ==> (s=s') || (p<>p').
+axiom s: stamp, s': stamp, p: bitstring, p': bitstring, ide: bitstring, idp: bitstring;
+  event(SessionT(s, p, ide, idp)) && event(SessionT(s', p', ide, idp)) ==> (s=s') || (p<>p').
+
+(** We test if V could accept validating the same ticket twice **)
+(** When Injective Query is true, the accepted parameters are unique **)
+query idex: bitstring, idpx: bitstring, rc: rand, c: bitstring, pkU1_rt: pkey, pkU2_rt: pkey, pkT: pkey;
+  inj-event(TReceiveTransfertRequest(idex, idpx, rc, c, pkU1_rt, pkU2_rt, pkT)) ==>  (inj-event(User2SendTransfertRequest(idex, idpx, pkU1_rt, pkU2_rt, pkT)) &&
+    inj-event(User1SendTransfertRequest(idex, idpx, rc, c, pkU1_rt, pkU2_rt, pkT))).
+
+let User1(skU1: skey, ide: bitstring, idp: bitstring, pkD: pkey, pkT: pkey, pkV: pkey, chU1: channel, chU2: channel) =
+  (********* Purchase phase **********)
+  new rc: rand;
+  let c = hash((ide, idp, rc)) in
+  new r: rand;
+  event User1SendPurchaseRequest(ide, idp, c, rc, pkD);
+  out(ch, aenc((ide, idp,rc), r, pkD));
+  out(ch, c);
+  in(ch, sigmac: bitstring);
+  if (checksign(sigmac, c, pkD) = c) then
+  (
+    event User1ReceivesPurchaseResponse(ide, idp, c, sigmac, pkD);
+    let ticket = ((ide, idp, rc), sigmac) in
+    insert Paiement(c);
+
+  (********* Validation Phase ************)
+  (
+  new r2: rand;
+  let skU1_r2 = randsk(skU1, r2) in
+  let pkU1_r2 = pk(skU1_r2) in out(ch, pkU1_r2);
+  new r3: rand;
+  event User1SendValidationRequest(ide, idp, rc, c, pkU1_r2, pkV);
+  out(ch, aenc((pkU1_r2, ticket), r3, pkV));
+  in(ch, (Vresponse: bitstring, Vsresponse: bitstring));
+  if (checksign(Vsresponse, Vresponse, pkV) = Vresponse) then
+  (
+    let s = adec(Vresponse, skU1_r2) in
+    event User1ReceivesValidationResponse(ide, idp, rc, c, pkU1_r2, pkV, s);
+    event User1SendValidationResponseConfirmation(ide, idp, rc, c, pkU1_r2, pkV, s);
+    out(chp, s)
+  )
+  )
+
+  |
+
+  (*********** Transfert Phase **********)
+  (
+  in(chU2, pkU2_rt: pkey);
+  new rt: rand;
+  let skU1_rt = randsk(skU1, rt) in
+  let pkU1_rt = pk(skU1_rt) in out(ch, pkU1_rt);
+  out(chU1, (ide, idp, pkU1_rt));
+  new r2: rand;
+  let sigma_T1 = sign((pkU2_rt, c, rc), r2, skU1_rt) in
+  new r3: rand;
+  event User1SendTransfertRequest(ide, idp, rc, c, pkU1_rt, pkU2_rt, pkT);
+  out(ch, (pk(skU1_rt), sigma_T1, aenc(ticket, r3, pkT)))
+  )
+
+  |
+
+  (*********** Refund Phase **********)
+  (
+  new r4: rand;
+  out(ch, aenc(ticket, r4, pkD));
+  get RefundPaiement(=c) in
+  event User1HasBeenRefund(ide, idp, c, pkD)
+  )
+
+  ).
+
+
+let User2(skU2: skey, pkT: pkey, pkV: pkey, chU1: channel, chU2: channel) =
+    new rt: rand;
+    let skU2_rt = randsk(skU2, rt) in
+    let pkU2_rt = pk(skU2_rt) in out(ch, pkU2_rt);
+    out(chU2, pkU2_rt);
+    in(chU1, (idex: bitstring, idpx: bitstring, pkU1_rt: pkey));
+    new r1: rand;
+    let sigma_T2 = sign((pkU1_rt, idex, idpx), r1, skU2_rt) in
+    event User2SendTransfertRequest(idex, idpx, pkU1_rt, pkU2_rt, pkT);
+    out(ch, (pk(skU2_rt), sigma_T2));
+    in(ch, responseT: bitstring);
+    if (checksign(responseT, (idex, idpx, pk(skU2_rt), pkU1_rt), pkT) = (idex, idpx, pk(skU2_rt), pkU1_rt)) then
+    (
+      event User2GetTApprobation(idex, idpx, pkU1_rt, pkU2_rt, pkT);
+      (*****************$Purchase Phase *****************)
+      new rcx: rand;
+      let cx = hash((idex, idpx, rcx)) in
+      new r2: rand;
+      event User2SendPurchaseRequest(idex, idpx, cx, pkU1_rt, pk(skU2_rt), pkT);
+      out(ch, aenc((idex, idpx, rcx), r2, pkT));
+      out(ch, cx);
+      in(ch, sigmacx: bitstring);
+      if (checksign(sigmacx, cx, pkT) = cx) then
+      (
+      event User2ReceivesPurchaseResponse(idex, idpx, cx, sigmacx, pkU1_rt, pk(skU2_rt), pkT);
+      let ticketx = ((idex, idpx, rcx), sigmacx) in
+      insert Paiement(cx);
+      (********* Validation Phase ************)
+      new r3: rand;
+      let skU2_r3 = randsk(skU2, r3) in
+      let pkU2_r3 = pk(skU2_r3) in out(ch, pkU2_r3);
+      new r4: rand;
+      event User2SendValidationRequest(idex, idpx, rcx, cx, pkU2_r3, pkV);
+      out(ch, aenc((pkU2_r3, ticketx), r4, pkV));
+      in(ch, (Vresponse: bitstring, Vsresponse: bitstring));
+      if (checksign(Vsresponse, Vresponse, pkV) = Vresponse) then
+      (
+        let s = adec(Vresponse, skU2_r3) in
+        event User2ReceivesValidationResponse(idex, idpx, rcx, cx, pkU2_r3, pkV, s);
+        event User2SendValidationResponseConfirmation(idex, idpx, rcx, cx, pkU2_r3, pkV, s);
+        out(chp, s)
+      )
+      )
+    ).
+
+
+let Transferor(skT: skey, pkD: pkey) =
+      new st: stamp;
+      in(ch, requestUser2: bitstring);
+      let (pkU2_rt: pkey, sigma_T2: bitstring) = requestUser2 in
+      in(ch, requestUser1: bitstring);
+      let (pkU1_rt: pkey, sigma_T1: bitstring, eticket: bitstring) =  requestUser1 in
+      let ((idex: bitstring, idpx: bitstring, rcx: rand), sigmacx: bitstring) = adec(eticket, skT) in
+      let cx = hash((idex, idpx, rcx)) in
+      if ((checksign(sigmacx, cx, pkD) = cx) &&
+        (checksign(sigma_T2, (pkU1_rt, idex, idpx), pkU2_rt) = (pkU1_rt, idex, idpx)) &&
+        (checksign(sigma_T1, (pkU2_rt, cx, rcx), pkU1_rt) = (pkU2_rt, cx, rcx))) then
+      (
+        get InvalidTickets(=cx) in
+        (0)
+        else
+        (
+          get ValidTickets(=cx) in
+          (
+            event SessionT(st, lock, idex, idpx);
+            event TReceiveTransfertRequest(idex, idpx, rcx, cx, pkU1_rt, pkU2_rt, pk(skT));
+            event TSendApprobationU2(idex, idpx, rcx, cx, pkU1_rt, pkU2_rt, pk(skT));
+            new r: rand;
+            out(ch, sign((idex, idpx, pkU2_rt, pkU1_rt), r, skT));
+            in(ch, request: bitstring);
+            let (=idex, =idpx, rc: rand) = adec(request, skT) in
+            let c = hash((idex, idpx, rc)) in
+            event TReceivesPurchaseRequest(idex, idpx, cx, c, pkU1_rt, pkU2_rt, pk(skT));
+            new r1: rand;
+            event TSendsPurchaseResponse(idex, idpx, cx, c, sign(c, r1, skT), pkU1_rt, pkU2_rt, pk(skT));
+            out(ch, sign(c, r1, skT));
+            get Paiement(=c) in
+            (
+               insert ValidTickets(c);
+               event SessionT(st, unlock, idex, idpx);
+               event User2HasValidTicket(idex, idpx, c, sign(c, r1, skT), pkU1_rt, pk(skT))
+            ) else
+            (
+              event SessionT(st, unlock, idex, idpx);
+              insert InvalidTickets(c)
+            )
+          ) else (0)
+        )
+      ).
+
+
+
+let Validator(skV: skey, pkD: pkey) =
+    new st: stamp;
+    in(ch, requestVal: bitstring);
+    let (pkU: pkey, ticket: bitstring) = adec(requestVal, skV) in
+    let ((idex: bitstring, idpx: bitstring, rc: rand), sigmac: bitstring) = ticket in
+    let c = hash((idex, idpx, rc)) in
+    if (checksign(sigmac, c, pkD) = c)  then
+    (
+      get InvalidTickets(=c) in
+      (0)
+      else
+      (
+          get ValidTickets(=c) in
+          (
+            get PlacesValidated(=idex, =idpx) in
+            (0) else
+            (
+            event SessionV(st, lock, idex, idpx);
+            event ValidatorReceivesValidTicket(idex, idpx, rc, c, pkU, pk(skV));
+            new s: bitstring;
+            new r: rand;
+            new r': rand;
+            event ValidatorSendsEncryptedRes(idex, idpx, rc, c, pkU, pk(skV), s);
+            out(ch, (aenc(s, r, pkU), sign(aenc(s, r, pkU), r', skV)));
+            in(chp, s': bitstring);
+            if (s = s') then
+            (
+              event SessionV(st, unlock, idex, idpx);
+              event TicketIsValidated(idex, idpx, rc, c, pkU, pk(skV), s);
+              insert PlacesValidated(idex, idpx);
+              insert InvalidTickets(c)
+            ) else (event SessionV(st, unlock, idex, idpx))
+            )
+          ) else (0)
+       )
+    ).
+
+let Distributor(skD: skey) =
+  new st: stamp;
+  in(ch, request: bitstring);
+  let (idex: bitstring, idpx: bitstring, rc: rand) = adec(request, skD) in
+  get Places(=idex, =idpx) in
+  (0) else
+    (
+      let c = hash((idex, idpx, rc)) in
+      event SessionD(st, lock, idex, idpx);
+      event DistributorReceivesPurchaseRequest(idex, idpx, c, rc, pk(skD));
+      new r: rand;
+      event DistributorSendsPurchaseResponse(idex, idpx, c, sign(c, r, skD), pk(skD));
+      out(ch, sign(c, r, skD));
+      get Paiement(=c) in
+       (
+        insert Places(idex, idpx);
+        insert ValidTickets(c);
+        event SessionD(st, unlock, idex, idpx);
+        event User1HasValidTicket(idex, idpx, c, sign(c, r, skD), pk(skD))
+       ) else
+       (
+        event SessionD(st, unlock, idex, idpx);
+        insert InvalidTickets(c)
+       )
+    ).
+
+let Refunder(skD: skey) =
+  in(ch, eticket: bitstring);
+  let ((idex: bitstring, idpx: bitstring, rcx: bitstring), sigmacx: bitstring) = adec(eticket, skD) in
+  let cx = hash((idex, idpx, rcx)) in
+  if (checksign(sigmacx, cx, pk(skD)) = cx) then
+  (
+    get InvalidTickets(=cx) in
+    (0)
+    else
+    (
+        get ValidTickets(=cx) in
+        (
+          insert InvalidTickets(cx);
+          event UserIsRefund(idex, idpx, cx, pk(skD));
+          insert RefundPaiement(cx)
+        ) else (0)
+    )
+  ).
+
+
+process
+  !(
+
+     (* Secret and public keys of User 1 *)
+     new skU1: skey; let pkU1 = pk(skU1) in out(ch, pkU1);
+     (* Secret and public keys of User 2 *)
+     new skU2: skey; let pkU2 = pk(skU2) in out(ch, pkU2);
+     (* Secret and public keys of Distributor *)
+     new skD: skey; let pkD = pk(skD) in out(ch, pkD);
+     (* Secret and public keys of Transferor *)
+     new skT: skey; let pkT = pk(skT) in out(ch, pkT);
+     (* Secret and public keys of Validator *)
+     new skV: skey; let pkV = pk(skV) in out(ch, pkV);
+
+     (* Event and place identifiers are public *)
+     new ide: bitstring; out(ch, ide);
+     new idp: bitstring; out(ch, idp);
+
+     (* Private channels *)
+     new chU1: channel;
+     new chU2: channel;
+
+     User1(skU1, ide, idp, pkD, pkT, pkV, chU1, chU2) | !Distributor(skD) | !Validator(skV, pkD) | !Validator(skV, pkT)
+     | User2(skU2, pkT, pkV, chU1, chU2) | !Transferor(skT, pkD) | !Refunder(skD)
+
+   )
