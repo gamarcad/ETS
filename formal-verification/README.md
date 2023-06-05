@@ -14,4 +14,6 @@ where `<property>` can be `Anonymity_User1`, `Anonymity_User2`, `Double_Refund`,
 
 The output files `.out` are also added to the folders. All output files contain true queries which corresponds to the case where there is no attacks.
 
+NB. The ProVerif version we worked with is 2.04
+
 
