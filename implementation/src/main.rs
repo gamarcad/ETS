@@ -5,7 +5,10 @@ mod signature;
 mod randomize;
 mod encryption;
 
+use std::cmp::Ordering;
 use std::collections::HashMap;
+use std::fs::File;
+use std::io::Write;
 use std::path::Path;
 use std::time::{Duration, Instant};
 use ed25519_dalek::Signature;
@@ -15,9 +18,6 @@ use crate::signature::SignatureKeyPair;
 use sha2::{Sha256, Digest};
 use rust_elgamal::Ciphertext;
 use crate::encryption::{EncryptionKeyPair, PointMapper};
-
-use serde::{Deserialize, Serialize};
-
 
 
 type IdeSpace = u8;
@@ -70,60 +70,117 @@ impl SharedState {
 
 
 
-#[derive(Serialize, Deserialize)]
 struct Timing {
-    times : HashMap<String, HashMap<usize, Vec<u128>>>
+    times : HashMap<String, HashMap<usize, Vec<u128>>>,
+    buffers : HashMap<String, (u128, Option<Instant>)>,
 }
 
 impl Timing {
     pub(crate) fn new() -> Self {
         Self {
-            times: HashMap::new()
+            times: HashMap::new(),
+            buffers : HashMap::new(),
         }
     }
 
-    pub(crate) fn start(&self) -> Instant {
-        Instant::now()
-    }
-
-    pub(crate) fn stop(&mut self, n: usize, i : usize, subject : &String, instant : Instant) {
-        self.add_time(n, i, subject.clone(), instant.elapsed() )
-    }
-
-
-    pub(crate) fn add_time(&mut self, _n: usize, i : usize, subject:  String, time : Duration ) {
-        match self.times.get_mut(&subject) {
+    pub(crate) fn start(&mut self, subject : String) {
+        match self.buffers.get(&subject) {
+            Some( (t, i) ) => {
+                assert!(i.is_none());
+                self.buffers.insert( String::from(subject), (t.clone(), Some(Instant::now())));
+            },
             None => {
-                // create times
-                let mut times = Vec::new();
-                times.push(time.as_millis());
-
-                let mut subject_times_n = HashMap::new();
-                subject_times_n.insert(i, times);
-                self.times.insert(subject, subject_times_n);
+                self.buffers.insert( String::from(subject), (0, Some(Instant::now())));
             }
-            Some(times_n) => {
-                match times_n.get_mut(&i) {
-                    None => {
-                        let mut times = Vec::new();
-                        times.push(time.as_millis());
-                        times_n.insert(i, times );
-                    },
-                    Some(subject_times_n) => {
-                        subject_times_n.push( time.as_millis() );
+        }
+    }
+
+    pub(crate) fn pause(&mut self, subject : String) {
+        let (buffer, instant) = self.buffers.get( &subject ).unwrap();
+        self.buffers.insert( String::from(subject), (buffer + instant.unwrap().elapsed().as_millis(), None));
+    }
+
+
+
+    pub(crate) fn stop_all(&mut self, billet_id : usize) {
+
+
+        for (subject, timing) in self.buffers.iter() {
+            let subject = String::from(subject);
+
+            // recover the execution time
+            let (buffer, instant) = timing;
+            let time = buffer + match instant {
+                Some( t ) => t.elapsed().as_millis(),
+                None => Duration::ZERO.as_millis()
+            };
+
+            // we insert the time in the right billet id
+            match self.times.get_mut(&subject) {
+                None => {
+                    // create times
+                    let mut times = Vec::new();
+                    times.push(time);
+
+                    let mut subject_times_n = HashMap::new();
+                    subject_times_n.insert(billet_id, times);
+                    self.times.insert(subject, subject_times_n);
+                }
+                Some(times_n) => {
+                    match times_n.get_mut(&billet_id) {
+                        None => {
+                            let mut times = Vec::new();
+                            times.push(time);
+                            times_n.insert(billet_id, times );
+                        },
+                        Some(subject_times_n) => {
+                            subject_times_n.push( time );
+                        }
                     }
                 }
             }
         }
+
+        self.buffers.clear()
+        
     }
 
-    pub(crate) fn export_at<P>( &self, filename : P )
-        where P : AsRef<Path>
+
+ 
+
+    pub(crate) fn export_at( &self, filename : String, nb_iterations : usize, nb_billets : usize )
     {
-        std::fs::write(
-            filename,
-            serde_json::to_string_pretty(&self).unwrap(),
-        ).unwrap();
+       
+
+        // generate 
+        for (subject, many_times_by_billets) in self.times.iter() { 
+            assert_eq!(many_times_by_billets.len(), nb_billets);
+
+
+            // compute the mean 
+            let mut mean_time_by_billets = Vec::<(usize, f64)>::new();
+            for (billet, times) in many_times_by_billets.iter()  {
+                let sum_times = times.clone().into_iter().reduce(|a, b| (a + b)).unwrap();
+                let mean_time = sum_times as f64 / times.len() as f64;
+
+                mean_time_by_billets.push( (*billet, mean_time) )
+            }
+
+            // sort by billet index
+            mean_time_by_billets.sort_by(
+                |(a, _), (b, _)| 
+                a.partial_cmp(b).unwrap()
+            );
+
+            
+            // export the result
+            let mut file = File::create(format!("{}-{}.csv", filename, subject)).unwrap();
+            file.write_all( format!("ticket, time\n").as_bytes() );
+            for (billet, time) in mean_time_by_billets.iter() {
+                file.write_all( format!("{}, {}\n", billet, time).as_bytes() );
+            }
+
+        }
     }
 
 }
@@ -131,14 +188,14 @@ impl Timing {
 #[warn(unused_variables)]
 fn bench_functions_with_state() {
     // define the benchmarking setting
-    let times_filename : String  = String::from("results.json");
+
     #[cfg(feature = "single")]
-    const NB_ITERATIONS: usize = 1;
+    const NB_ITERATIONS: usize = 2;
     #[cfg(feature = "single")]
-    const NB_BILLETS: usize = 1;
+    const NB_BILLETS: usize = 10;
 
     #[cfg(not(feature = "single"))]
-    const NB_ITERATIONS: usize = 50;
+    const NB_ITERATIONS: usize = 200;
     #[cfg(not(feature = "single"))]
     const NB_BILLETS: usize = 1000;
 
@@ -185,17 +242,13 @@ fn bench_functions_with_state() {
 
     let mut timing = Timing::new();
 
-    let purchase_subject = format!("purchase");
-    let transfer_subject = format!("transfer");
-    let refund_subject = format!("refund");
-    let validate_subject = format!("validate");
-    const NB_EXECUTIONS : usize = NB_ITERATIONS * NB_BILLETS;
+    const NB_EXECUTIONS : usize = NB_ITERATIONS;
     let mut executions_done = 0;
-    for _ in 0..NB_ITERATIONS {
+    for iteration in 1..=NB_ITERATIONS {
         let execution_start = Instant::now();
         println!("Progression: {}% ({}/{}): ",
-                 executions_done as f64 / NB_EXECUTIONS as f64,
-                 executions_done, NB_EXECUTIONS
+                 iteration as f64 / NB_EXECUTIONS as f64,
+                 iteration, NB_EXECUTIONS
         );
 
         let mut next_tickets = Vec::new();
@@ -206,9 +259,15 @@ fn bench_functions_with_state() {
             let mut state = SharedState::new();
             // we also maintains a list of tickets, used only for the purpose of the benchmarking
             let mut tickets: Vec<Ticket> = Vec::new();
-            for iteration in 0..NB_BILLETS {
-                let start = timing.start();
+            for billet in 0..NB_BILLETS {
+                timing.start(String::from("purchase"));
+
+                //let start = timing.start();
+                
                 let ticket = purchase(
+                    &mut timing,
+                    String::from("purchase"),
+                    billet,
                     &mut state,
                     &mapper,
                     &d_signature,
@@ -216,16 +275,24 @@ fn bench_functions_with_state() {
                     &IDE,
                     &IDP
                 ).unwrap();
-                timing.stop(NB_BILLETS, iteration, &purchase_subject, start);
+
+                //timing.pause(   String::from("purchase"));
+                //timing.stop(NB_BILLETS, iteration, &purchase_subject, start);
+
+                timing.stop_all(billet);
                 tickets.push(ticket)
             }
 
             // Then we do the transfer of the tickets
             let mut new_tickets = Vec::new();
-            for (i, ticket) in tickets.iter().enumerate() {
-                let start = timing.start();
+            for (billet, ticket) in tickets.iter().enumerate() {
+                //let start = timing.start();
+                timing.start(String::from("transfer"));
+                
                 let transferred_ticket = transfer(
                     &mut state,
+                    &mut timing,
+                    billet,
                     ticket,
                     &t_encryption,
                     &t_signature,
@@ -237,7 +304,11 @@ fn bench_functions_with_state() {
                     &u2_signature,
                     &mapper
                 );
-                timing.stop(NB_BILLETS, i, &transfer_subject, start);
+                
+                //timing.stop(NB_BILLETS, i, &transfer_subject, start);
+                //timing.stop(billet, "transfer");
+
+                timing.stop_all(billet);
 
                 // every ticket has to be refund since there are all valid
                 assert_eq!(transferred_ticket.is_some(), true);
@@ -249,10 +320,14 @@ fn bench_functions_with_state() {
             next_tickets = tickets.clone();
 
             // Then, we do the refund of the tickets
-            for (i, ticket) in tickets.iter().enumerate() {
-                let start = timing.start();
+            for (billet, ticket) in tickets.iter().enumerate() {
+                //let start = timing.start();
+                timing.start(String::from("refund"));
+
                 let ticket_is_refund = refund(
                     &mut state,
+                    &mut timing,
+                    String::from("refund"),
                     ticket,
                     &mapper,
                     &t_encryption,
@@ -260,7 +335,10 @@ fn bench_functions_with_state() {
                     &t_signature,
                     &d_signature
                 );
-                timing.stop(NB_BILLETS, i, &refund_subject, start);
+                
+                //timing.stop( billet, "refund"  );
+                //timing.stop(NB_BILLETS, i, &refund_subject, start);
+                timing.stop_all(billet);
 
                 // every ticket has to be refund since there are all valid
                 assert_eq!(ticket_is_refund, true);
@@ -275,10 +353,13 @@ fn bench_functions_with_state() {
             let mut state = next_state;
 
             // Then we do the validation of the tickets.
-            for (i, ticket) in tickets.iter().enumerate() {
-                let start = timing.start();
+            for (billet, ticket) in tickets.iter().enumerate() {
+                //let start = timing.start();
+                timing.start(String::from("validate"));
+
                 let ticket_is_valid = validation(
                     &mut state,
+                    &mut timing,
                     &mapper,
                     &d_signature,
                     &t_signature,
@@ -290,7 +371,10 @@ fn bench_functions_with_state() {
                     &v_signature,
                     ticket
                 );
-                timing.stop(NB_BILLETS, i, &validate_subject, start);
+               
+                //timing.stop(billet, "validate");
+                //timing.stop(NB_BILLETS, i, &validate_subject, start);
+                timing.stop_all(billet);
 
                 //  every ticket has to be validated since there are all valid
                 assert!(ticket_is_valid);
@@ -301,10 +385,13 @@ fn bench_functions_with_state() {
         println!("Done in {}ms", execution_duration.as_millis());
         executions_done += 1;
 
+        println!("Exporting...");
+        timing.export_at( String::from("result"), NB_ITERATIONS, NB_BILLETS);
+
     }
 
 
-    timing.export_at( times_filename );
+    
 }
 
 fn key_to_bytes( signature_key : &SignatureKeyPair, encryption_key : &EncryptionKeyPair ) -> Vec<u8> {
@@ -348,12 +435,17 @@ fn hash_ticket( ticket : &Ticket ) -> Hash {
 
 fn check_ticket(
     state : &mut SharedState,
+    timing : &mut Timing,
+    subject : String,
     ticket : &Ticket,
     t_signature : &SignatureKeyPair,
     d_signature : &SignatureKeyPair,
     insert_ticket_if_valid : bool
 ) -> bool {
+
+    
     // parse the ticket
+    timing.start(format!("{}-crypto", subject));
     let (_, _, _, signature) = ticket;
 
     // compute the hash c = H(ide, idp, c)
@@ -361,17 +453,24 @@ fn check_ticket(
 
     // verify the signature
     let verified_signature = t_signature.verify(c.as_slice(), &signature) || d_signature.verify(&c, &signature);
+    timing.pause(format!("{}-crypto", subject));
+
+    timing.start(format!("{}-state", subject));
     let valid_ticket = !state.contains_ticket( &c );
+   
 
     // in case where the ticket is valid, insert it in the shared state to prevent double-spending
     if verified_signature && valid_ticket {
         if insert_ticket_if_valid {
             state.add_ticket( c );
         }
+        timing.pause(format!("{}-state", subject));
         true
     } else {
+        timing.pause(format!("{}-state", subject));
         false
     }
+    
 }
 
 fn payment() -> bool{
@@ -380,6 +479,9 @@ fn payment() -> bool{
 }
 
 fn purchase(
+    timing : &mut Timing,
+    subject : String,
+    billet_index  : usize,
     state : &mut SharedState,
     mapper : &PointMapper,
     signature: &SignatureKeyPair,
@@ -387,6 +489,14 @@ fn purchase(
     event_id : &IdeSpace,
     place_id : &IdpSpace
 ) -> Option<Ticket> {
+   
+    timing.start(format!("{}-crypto", subject));
+    
+   
+      
+
+  
+
     // generation of the random r_c
     let r_c: Vec<u8> = (0..SEC_PAR_BYTES).map(|_| { rand::random::<u8>() }).collect();
 
@@ -409,25 +519,27 @@ fn purchase(
 
     // decrypts the ciphertext containing (ide, idp, r_c)
     let _plaintext = d_encryption.decrypt(&mapper, &ciphertext);
+    timing.pause(format!("{}-crypto", subject));
 
 
     // we check that ticket was not already included in the shared state
+    timing.start(format!("{}-state", subject));
     if state.contains_ticket(&c) {
         return None;
     }
 
-    // we store the hash c in the shared state until the payment was successfully done
     state.add_ticket( c.clone() );
-    if payment() {
-        state.remove_ticket(&c);
-        Some((*event_id, *place_id, r_c, signature.sign(c.as_slice())))
-    } else {
-        None
-    }
+    state.remove_ticket(&c);
+    timing.pause(format!("{}-state", subject));
+
+    Some((*event_id, *place_id, r_c, signature.sign(c.as_slice())))
+   
 }
 
 fn refund(
     state : &mut SharedState,
+    timing : &mut Timing,
+    subject : String,
     ticket : &Ticket,
     mapper : &PointMapper,
     _t_encryption : &EncryptionKeyPair,
@@ -435,14 +547,26 @@ fn refund(
     t_signature : &SignatureKeyPair,
     d_signature : &SignatureKeyPair
 ) -> bool {
+    
+    timing.start(format!("{}-crypto", subject));
     let ct = encrypt_ticket(ticket, mapper, d_encryption);
     let received_tk_d = decrypt_ticket(d_encryption, mapper, &ct);
-    check_ticket(state, &received_tk_d,  t_signature, d_signature, true)
+    timing.pause(format!("{}-crypto", subject));
+
+
+    
+    let is_valid = check_ticket(state, timing, subject, &received_tk_d,  t_signature, d_signature, true);
+
+
+
+    is_valid
 }
 
 
 fn transfer(
     state : &mut SharedState,
+    timing : &mut Timing,
+    billet_index  : usize,
     ticket : &Ticket,
     t_encryption :  &EncryptionKeyPair,
     t_signature : &SignatureKeyPair,
@@ -461,6 +585,7 @@ fn transfer(
     let randomized_u2_signature = u2_signature.randomize();
 
 
+    timing.start(String::from("transfer-crypto"));
     // User 1 ----------------------------------------------------------------------------------
     let (event_id, place_id, _, _) = ticket;
     // computation of c
@@ -486,6 +611,7 @@ fn transfer(
         mapper,
         t_encryption
     );
+    
 
     // User 2 ----------------------------------------------------------------------------------
     // signature of randomized key of u1
@@ -536,16 +662,21 @@ fn transfer(
     let valid_signature_from_u2 = randomized_u2_signature.verify(content_to_verify.as_slice(), &sigma_t_2);
     if ! valid_signature_from_u2 { return None }
 
+    timing.pause(String::from("transfer-crypto"));
 
     // check the ticket
     let tk_is_valid = check_ticket(
         state,
+        timing,
+        String::from("transfer"),
         &tk,
         t_signature,
         d_signature,
         false
     );
     if !tk_is_valid { return None; }
+
+    timing.start(String::from("transfer-crypto"));
 
     // the transfer validation signature is returned from T to U2
     let mut content_to_sign : Vec<u8> = Vec::new();
@@ -559,8 +690,13 @@ fn transfer(
     let signature_to_u2 = t_signature.sign(content_to_sign.as_slice());
     t_signature.verify(content_to_sign.as_slice(), &signature_to_u2);
 
+    timing.pause(String::from("transfer-crypto"));
+
     // we perform a purchase between T and U2
     let new_ticket = match purchase(
+        timing,
+        String::from("transfer"),
+        billet_index,
         state,
         mapper,
         t_signature,
@@ -574,6 +710,7 @@ fn transfer(
         }
     };
 
+    timing.start(String::from("transfer-crypto"));
     // generating the signature for U1
     let mut content_to_sign : Vec<u8> = Vec::new();
     content_to_sign.push(IDE);
@@ -586,10 +723,13 @@ fn transfer(
     if ! t_signature.verify( content_to_sign.as_slice(), &signature_to_u1 ) {
         return None
     }
+    timing.pause(String::from("transfer-crypto"));
 
     // Refund the ticket of U1
     let valid_refund = refund(
         state,
+        timing,
+        String::from("transfer"),
         ticket,
         mapper,
         t_encryption,
@@ -606,6 +746,7 @@ fn transfer(
 
 fn validation(
     state : &mut SharedState,
+    timing : &mut Timing,
     mapper:  &PointMapper,
     d_signature : &SignatureKeyPair,
     t_signature : &SignatureKeyPair,
@@ -617,6 +758,7 @@ fn validation(
     v_signature : &SignatureKeyPair,
     ticket : &Ticket
 ) -> bool {
+    timing.start(String::from("validation-crypto"));
     // checks that the certificate is valid
     let uncertified_validator = d_signature.verify(
         key_to_bytes(&t_signature, &t_encryption).as_slice(),
@@ -641,14 +783,19 @@ fn validation(
     content_to_encrypt.append(&mut r_c.clone());
     content_to_encrypt.append( &mut signature.to_vec().clone() );
     let ct = v_encryption.encrypt(&content_to_encrypt);
+    
 
     // V ---------------------------------------------------------------------------------------
     // decrypt the ciphertext containing the ticket
     v_encryption.decrypt(&mapper, &ct);
-    if ! check_ticket(state, ticket, t_signature, d_signature, true) {
+
+    timing.pause(String::from("validation-crypto"));
+
+    if ! check_ticket(state, timing, String::from("validation"), ticket, t_signature, d_signature, true) {
         return false;
     }
 
+    timing.start(String::from("validation-crypto"));
     // generate a random s
     let mut rng = thread_rng();
     let s : Vec<u8> = (0..SEC_PAR_BYTES).map(|_| rng.gen::<u8>()).collect();
@@ -670,6 +817,7 @@ fn validation(
     let _signature_ct_s = v_signature.sign(
         ciphertext_to_bytes(&ct_s).as_slice()
     );
+    timing.pause(String::from("validation-crypto"));
 
     // The physical comparison is outside of the result
     true
