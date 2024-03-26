@@ -4,12 +4,12 @@ extern crate core;
 mod signature;
 mod randomize;
 mod encryption;
+mod audit;
 
-use std::cmp::Ordering;
+
 use std::collections::HashMap;
 use std::fs::File;
 use std::io::Write;
-use std::path::Path;
 use std::time::{Duration, Instant};
 use ed25519_dalek::Signature;
 use rand::{Rng, thread_rng};
@@ -18,6 +18,9 @@ use crate::signature::SignatureKeyPair;
 use sha2::{Sha256, Digest};
 use rust_elgamal::Ciphertext;
 use crate::encryption::{EncryptionKeyPair, PointMapper};
+use std::option::Option;
+use protego::protocol::{Credential, Omega};
+use crate::audit::JudgeKey;
 
 
 type IdeSpace = u8;
@@ -186,13 +189,21 @@ impl Timing {
 }
 
 #[warn(unused_variables)]
-fn bench_functions_with_state() {
+fn bench_functions_with_state( enable_audit : bool  ) {
     // define the benchmarking setting
 
     #[cfg(feature = "single")]
     const NB_ITERATIONS: usize = 2;
     #[cfg(feature = "single")]
     const NB_BILLETS: usize = 10;
+
+    let proto_name = {
+        if enable_audit {
+            String::from("spotlight")
+        }  else {
+            String::from("applause")
+        }
+    };
 
     #[cfg(not(feature = "single"))]
     const NB_ITERATIONS: usize = 200;
@@ -215,11 +226,17 @@ fn bench_functions_with_state() {
             content_to_sign
         };
 
+    // create the judge key
+    let mut judge_key = JudgeKey::new();
+
     // creating users key
     let u_signature = SignatureKeyPair::new();
     let u_encryption = EncryptionKeyPair::new();
+    let u_cred = judge_key.obtain();
+
     let u2_signature = SignatureKeyPair::new();
     let u2_encryption = EncryptionKeyPair::new();
+    let u2_cred = judge_key.obtain();
 
 
     // creating ticket distributor "D" key
@@ -247,7 +264,7 @@ fn bench_functions_with_state() {
     for iteration in 1..=NB_ITERATIONS {
         let execution_start = Instant::now();
         println!("Progression: {}% ({}/{}): ",
-                 iteration as f64 / NB_EXECUTIONS as f64,
+                 (iteration as f64 / NB_EXECUTIONS as f64) * 100.0,
                  iteration, NB_EXECUTIONS
         );
 
@@ -369,7 +386,10 @@ fn bench_functions_with_state() {
                     &cert_v,
                     &v_encryption,
                     &v_signature,
-                    ticket
+                    ticket,
+                    &mut judge_key,
+                    &u_cred,
+                    enable_audit
                 );
                
                 //timing.stop(billet, "validate");
@@ -386,7 +406,7 @@ fn bench_functions_with_state() {
         executions_done += 1;
 
         println!("Exporting...");
-        timing.export_at( String::from("result"), NB_ITERATIONS, NB_BILLETS);
+        timing.export_at( proto_name.clone(), NB_ITERATIONS, NB_BILLETS);
 
     }
 
@@ -756,9 +776,13 @@ fn validation(
     cert_v : &Signature,
     v_encryption : &EncryptionKeyPair,
     v_signature : &SignatureKeyPair,
-    ticket : &Ticket
+    ticket : &Ticket,
+    judge_keys : &mut JudgeKey,
+    u_cred : &Credential,
+    enable_audit : bool
 ) -> bool {
     timing.start(String::from("validation-crypto"));
+
     // checks that the certificate is valid
     let uncertified_validator = d_signature.verify(
         key_to_bytes(&t_signature, &t_encryption).as_slice(),
@@ -783,7 +807,15 @@ fn validation(
     content_to_encrypt.append(&mut r_c.clone());
     content_to_encrypt.append( &mut signature.to_vec().clone() );
     let ct = v_encryption.encrypt(&content_to_encrypt);
-    
+
+
+    // if audit is asked, then generate a showing of the credential
+    let proof : Option<Omega> = match enable_audit {
+        false => None,
+        true => {
+            Some(judge_keys.show(u_cred))
+        }
+    };
 
     // V ---------------------------------------------------------------------------------------
     // decrypt the ciphertext containing the ticket
@@ -795,7 +827,18 @@ fn validation(
         return false;
     }
 
+
+
     timing.start(String::from("validation-crypto"));
+
+    // if audit is asked: Check the validity of the provided proof
+    match proof {
+        None => {}
+        Some(proof) => {
+            judge_keys.verify(proof);
+        }
+    };
+
     // generate a random s
     let mut rng = thread_rng();
     let s : Vec<u8> = (0..SEC_PAR_BYTES).map(|_| rng.gen::<u8>()).collect();
@@ -825,6 +868,7 @@ fn validation(
 
 
 
+
 #[allow(unused_variables)]
 #[allow(non_snake_case)]
 #[allow(non_upper_case_globals)]
@@ -833,8 +877,15 @@ fn main() {
     // we start by benchmarking the primitive
     //bench_primitive();
 
-    bench_functions_with_state();
+    bench_functions_with_state( true );
 
+    // test the judge key
+    let mut judge_key = JudgeKey::new();
+    let cred = judge_key.obtain();
+    let proof = judge_key.show(&cred);
+    let is_verified_proof = judge_key.verify(proof);
+    println!("Verified? {}", is_verified_proof);
+    
 }
 
 
