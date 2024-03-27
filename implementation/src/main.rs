@@ -877,14 +877,17 @@ fn main() {
     // we start by benchmarking the primitive
     //bench_primitive();
 
+    bench_functions_with_state( false );
     bench_functions_with_state( true );
 
+    /*
     // test the judge key
     let mut judge_key = JudgeKey::new();
     let cred = judge_key.obtain();
     let proof = judge_key.show(&cred);
     let is_verified_proof = judge_key.verify(proof);
     println!("Verified? {}", is_verified_proof);
+     */
     
 }
 
